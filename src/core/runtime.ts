@@ -1511,6 +1511,17 @@ const readPersistedState = async (): Promise<ResonantShellState | null> => {
   if (hasTauri()) {
     return ((await invoke("load_runtime_state")) as ResonantShellState | null) ?? null;
   }
+  // In web mode, always fetch from the Pi5 HTTP backend so the web UI stays in sync
+  // with the GTK GUI state (add-on enable/disable, LLM auth, etc.).
+  if (isWebMode()) {
+    try {
+      const result = await webInvoke<{ Ok: ResonantShellState }>("load_runtime_state", {});
+      if (result?.Ok) return result.Ok;
+    } catch (e) {
+      console.warn("[web] failed to load_runtime_state from backend:", e);
+    }
+  }
+  // Fallback to local cache only if the backend is unreachable.
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) {
     return null;
@@ -1522,6 +1533,13 @@ export const persistState = async (state: ResonantShellState): Promise<void> => 
   if (hasTauri()) {
     await invoke("save_runtime_state", { state });
     return;
+  }
+  if (isWebMode()) {
+    try {
+      await webInvoke("save_runtime_state", { state });
+    } catch (e) {
+      console.warn("[web] failed to save_runtime_state to backend:", e);
+    }
   }
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 };
