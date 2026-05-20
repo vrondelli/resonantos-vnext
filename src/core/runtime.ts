@@ -173,7 +173,15 @@ export const loadProviderCredentialStatuses = async (): Promise<Record<string, b
     return (await invoke("load_provider_secret_statuses")) as Record<string, boolean>;
   }
   if (isWebMode()) {
-    // In web mode, the server holds the OpenAI key — mark shared-openai as configured.
+    // In web mode, fetch credential statuses from the Pi5 HTTP backend
+    // so MiniMax (and other provider credentials stored server-side) are recognized.
+    try {
+      const result = await webInvoke<Record<string, boolean>>("load_provider_secret_statuses", {});
+      if (result && Object.keys(result).length > 0) return result;
+    } catch (e) {
+      console.warn("[web] failed to load_provider_secret_statuses from backend:", e);
+    }
+    // Fallback: server holds the OpenAI key.
     return { "shared-openai": true };
   }
   return {};

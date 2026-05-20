@@ -1490,6 +1490,86 @@ fn http_dispatch_command(command: &str, args: serde_json::Value, app_handle: Opt
                     let r = crate::delegation_finish_task_workspace(app.clone(), r.request);
                     serde_json::to_value(r).map_err(|e| e.to_string())
                 }
+                "load_provider_secret_statuses" => {
+                    let _ = serde_json::from_value::<serde::de::IgnoredAny>(args).map_err(|e| e.to_string())?;
+                    let r = crate::load_provider_secret_statuses(app.clone());
+                    serde_json::to_value(r).map_err(|e| e.to_string())
+                }
+                "provider_smoke_test" => {
+                    #[derive(Deserialize)]
+                    struct R {
+                        provider_id: String,
+                        provider_type: String,
+                        api_base_url: Option<String>,
+                        runtime_node_id: Option<String>,
+                        runtime_node_kind: Option<String>,
+                        runtime_node_endpoint: Option<String>,
+                        auth_tier: Option<String>,
+                        model: String,
+                    }
+                    let r_args = serde_json::from_value::<R>(args).map_err(|e| e.to_string())?;
+                    let app_clone = app.clone();
+                    let result = tokio::runtime::Handle::current().block_on(async {
+                        provider_service::execute_provider_smoke_test(
+                            &app_clone,
+                            ProviderServiceChatRequest {
+                                request_id: Some("provider-smoke-test".to_string()),
+                                thread_id: None,
+                                agent_id: None,
+                                channel_id: None,
+                                provider_id: r_args.provider_id,
+                                provider_type: r_args.provider_type,
+                                api_base_url: r_args.api_base_url,
+                                runtime_node_id: r_args.runtime_node_id,
+                                runtime_node_kind: r_args.runtime_node_kind,
+                                runtime_node_endpoint: r_args.runtime_node_endpoint,
+                                auth_tier: r_args.auth_tier,
+                                model: r_args.model,
+                                reasoning_effort: "minimal".to_string(),
+                                system_prompt: String::new(),
+                                messages: Vec::new(),
+                            },
+                        ).await
+                    });
+                    serde_json::to_value(result).map_err(|e| e.to_string())
+                }
+                "provider_setup_probe" => {
+                    #[derive(Deserialize)]
+                    struct R {
+                        provider_id: String,
+                        provider_type: String,
+                        api_base_url: Option<String>,
+                        runtime_node_kind: Option<String>,
+                        runtime_node_endpoint: Option<String>,
+                        auth_tier: Option<String>,
+                    }
+                    let r_args = serde_json::from_value::<R>(args).map_err(|e| e.to_string())?;
+                    let app_clone = app.clone();
+                    let result = tokio::runtime::Handle::current().block_on(async {
+                        provider_service::execute_provider_setup_probe(
+                            &app_clone,
+                            provider_service::ProviderSetupProbeRequest {
+                                provider_id: r_args.provider_id,
+                                provider_type: r_args.provider_type,
+                                api_base_url: r_args.api_base_url,
+                                runtime_node_kind: r_args.runtime_node_kind,
+                                runtime_node_endpoint: r_args.runtime_node_endpoint,
+                                auth_tier: r_args.auth_tier,
+                            },
+                        ).await
+                    });
+                    serde_json::to_value(result).map_err(|e| e.to_string())
+                }
+                "provider_diagnostics" => {
+                    #[derive(Deserialize)]
+                    struct R { provider_id: Option<String> }
+                    let r_args = serde_json::from_value::<R>(args).map_err(|e| e.to_string())?;
+                    let app_clone = app.clone();
+                    let result = tokio::runtime::Handle::current().block_on(async {
+                        provider_service::query_provider_diagnostics(&app_clone, r_args.provider_id.as_deref()).await
+                    });
+                    serde_json::to_value(result).map_err(|e| e.to_string())
+                }
                 _ => Err(format!("unknown command: {}", command)),
             }
         }
