@@ -516,7 +516,7 @@ export const promptMessagesForThread = (
   compactState: ContextMemoryState | null,
 ): ConversationMessage[] => {
   const usableProviderMessage = (message: ConversationMessage): boolean => {
-    if (!message.content.trim()) {
+    if (!message.content || typeof message.content !== 'string' || !message.content.trim()) {
       return false;
     }
     if (message.role === "assistant" && (message.status === "failed" || message.status === "interrupted")) {
