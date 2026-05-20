@@ -175,8 +175,11 @@ export const loadProviderCredentialStatuses = async (): Promise<Record<string, b
   if (isWebMode()) {
     // In web mode, fetch credential statuses from the Pi5 HTTP backend
     // so MiniMax (and other provider credentials stored server-side) are recognized.
+    // Note: the Pi5 HTTP backend returns Rust Result<T,E> as {"Ok": value} or {"Err": err},
+    // so we unwrap if necessary.
     try {
-      const result = await webInvoke<Record<string, boolean>>("load_provider_secret_statuses", {});
+      const raw = await webInvoke<Record<string, unknown>>("load_provider_secret_statuses", {});
+      const result = "Ok" in raw ? (raw.Ok as Record<string, boolean>) : (raw as Record<string, boolean>);
       if (result && Object.keys(result).length > 0) return result;
     } catch (e) {
       console.warn("[web] failed to load_provider_secret_statuses from backend:", e);
