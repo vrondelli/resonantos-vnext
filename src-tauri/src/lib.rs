@@ -1257,6 +1257,51 @@ async fn provider_service_chat_completion(
     system_prompt: String,
     messages: Vec<ChatMessageInput>,
 ) -> Result<String, String> {
+    // In split-mode, forward to Pi5 backend if RESONANTOS_PI5_IP is set
+    if let Ok(pi5_ip) = std::env::var("RESONANTOS_PI5_IP") {
+        if !pi5_ip.is_empty() && pi5_ip != "127.0.0.1" && pi5_ip != "localhost" {
+            let pi5_port = std::env::var("RESONANTOS_PI5_HTTP_PORT")
+                .unwrap_or_else(|_| "1431".to_string());
+            let url = format!(
+                "http://{}:{}/invoke/provider_service_chat_completion",
+                pi5_ip, pi5_port
+            );
+            let client = reqwest::Client::new();
+            let body = serde_json::json!({
+                "requestId": request_id,
+                "threadId": thread_id,
+                "agentId": agent_id,
+                "channelId": channel_id,
+                "providerId": provider_id,
+                "providerType": provider_type,
+                "apiBaseUrl": api_base_url,
+                "runtimeNodeId": runtime_node_id,
+                "runtimeNodeKind": runtime_node_kind,
+                "runtimeNodeEndpoint": runtime_node_endpoint,
+                "authTier": auth_tier,
+                "model": model,
+                "reasoningEffort": reasoning_effort,
+                "systemPrompt": system_prompt,
+                "messages": messages,
+            });
+            match client.post(&url).json(&body).send().await {
+                Ok(resp) => {
+                    let text = resp.text().await.map_err(|e| e.to_string())?;
+                    // Parse and unwrap Ok/Err wrapper if present
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&text) {
+                        if let Some(ok_val) = val.get("Ok") {
+                            return Ok(serde_json::to_string(ok_val).map_err(|e| e.to_string())?);
+                        }
+                        if let Some(err_val) = val.get("Err") {
+                            return Err(err_val.as_str().unwrap_or("Unknown error").to_string());
+                        }
+                    }
+                    return Ok(text);
+                }
+                Err(e) => return Err(format!("forward to Pi5 failed: {}", e)),
+            }
+        }
+    }
     execute_provider_service_chat(
         &app,
         ProviderServiceChatRequest {

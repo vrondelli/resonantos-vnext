@@ -422,7 +422,7 @@ fn extract_local_usage(
     })
 }
 
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub(crate) struct ChatMessageInput {
     pub(crate) role: String,
     pub(crate) content: String,
