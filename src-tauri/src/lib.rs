@@ -1562,6 +1562,7 @@ fn http_dispatch_command(command: &str, args: serde_json::Value, app_handle: Opt
                 }
                 "provider_service_chat_completion" => {
                     #[derive(Deserialize)]
+                    #[serde(rename_all = "camelCase")]
                     struct R {
                         request_id: Option<String>,
                         thread_id: Option<String>,
