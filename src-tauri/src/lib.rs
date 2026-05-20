@@ -1560,6 +1560,55 @@ fn http_dispatch_command(command: &str, args: serde_json::Value, app_handle: Opt
                     });
                     serde_json::to_value(result).map_err(|e| e.to_string())
                 }
+                "provider_service_chat_completion" => {
+                    #[derive(Deserialize)]
+                    struct R {
+                        request_id: Option<String>,
+                        thread_id: Option<String>,
+                        agent_id: Option<String>,
+                        channel_id: Option<String>,
+                        provider_id: String,
+                        provider_type: String,
+                        api_base_url: Option<String>,
+                        runtime_node_id: Option<String>,
+                        runtime_node_kind: Option<String>,
+                        runtime_node_endpoint: Option<String>,
+                        auth_tier: Option<String>,
+                        model: String,
+                        reasoning_effort: String,
+                        system_prompt: String,
+                        messages: Vec<ChatMessageInput>,
+                    }
+                    let r_args = serde_json::from_value::<R>(args).map_err(|e| e.to_string())?;
+                    let app_clone = app.clone();
+                    let result = tokio::runtime::Handle::current().block_on(async {
+                        execute_provider_service_chat(
+                            &app_clone,
+                            ProviderServiceChatRequest {
+                                request_id: r_args.request_id,
+                                thread_id: r_args.thread_id,
+                                agent_id: r_args.agent_id,
+                                channel_id: r_args.channel_id,
+                                provider_id: r_args.provider_id,
+                                provider_type: r_args.provider_type,
+                                api_base_url: r_args.api_base_url,
+                                runtime_node_id: r_args.runtime_node_id,
+                                runtime_node_kind: r_args.runtime_node_kind,
+                                runtime_node_endpoint: r_args.runtime_node_endpoint,
+                                auth_tier: r_args.auth_tier,
+                                model: r_args.model,
+                                reasoning_effort: r_args.reasoning_effort,
+                                system_prompt: r_args.system_prompt,
+                                messages: r_args.messages,
+                            },
+                        ).await
+                    });
+                    // Unwrap Result<T,E> → T before serializing, so the HTTP response is not double-wrapped.
+                    match result {
+                        Ok(v) => serde_json::to_value(v).map_err(|e| e.to_string()),
+                        Err(e) => Err(e),
+                    }
+                }
                 "provider_diagnostics" => {
                     #[derive(Deserialize)]
                     struct R { provider_id: Option<String> }
