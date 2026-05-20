@@ -1723,9 +1723,6 @@ async fn execute_cloud_provider_service_chat_with_usage(
     app: &AppHandle,
     request: &ProviderServiceChatRequest,
 ) -> Result<ProviderServiceChatResponse, String> {
-    if request.provider_id == "shared-openai" && request.provider_type == "openai" {
-        return execute_codex_subscription_chat_with_usage(request);
-    }
     let api_key = resolve_provider_secret(app, &request.provider_id)?;
     if api_key.is_none() && request.runtime_node_kind.as_deref() == Some("cloud") {
         return Err("No provider secret is configured for this Strategist profile.".to_string());
