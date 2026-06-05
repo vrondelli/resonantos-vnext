@@ -1,0 +1,3017 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ResonantOS Security Agent X-Ray</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #16202a;
+      --muted: #5e6b78;
+      --line: #d8dee6;
+      --panel: #ffffff;
+      --soft: #f4f7fa;
+      --blue: #1769aa;
+      --green: #16734d;
+      --red: #b33a3a;
+      --amber: #a66a00;
+      --violet: #6a4aa0;
+      --shadow: 0 10px 30px rgba(18, 28, 38, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #eef2f6;
+      line-height: 1.55;
+    }
+    header {
+      padding: 44px min(6vw, 72px) 30px;
+      background: linear-gradient(135deg, #f8fbfd 0%, #e8f1f8 58%, #f4efe2 100%);
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--blue);
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+    h1 {
+      max-width: 1040px;
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 4.2rem);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+    .lead {
+      max-width: 900px;
+      margin: 18px 0 0;
+      color: #314253;
+      font-size: clamp(1.02rem, 1.5vw, 1.22rem);
+    }
+    main { padding: 28px min(6vw, 72px) 64px; }
+    section {
+      max-width: 1220px;
+      margin: 0 auto 28px;
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 1.35rem;
+      letter-spacing: 0;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 1.02rem;
+      letter-spacing: 0;
+    }
+    p { margin: 0 0 12px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+    .tagrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #e8f0f7;
+      color: #24445f;
+      font-size: 0.86rem;
+      font-weight: 650;
+    }
+    .callout {
+      border-left: 4px solid var(--blue);
+      padding: 13px 15px;
+      background: #f7fafc;
+      border-radius: 0 8px 8px 0;
+    }
+    .callout.warning { border-left-color: var(--amber); }
+    .callout.danger { border-left-color: var(--red); }
+    .lane-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .lane-list li {
+      padding: 12px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .lane-list strong { display: block; margin-bottom: 4px; }
+    .dag {
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .flow {
+      min-width: 960px;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+    .node {
+      background: #f9fbfd;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 92px;
+      position: relative;
+    }
+    .node::after {
+      content: "→";
+      position: absolute;
+      right: -12px;
+      top: 38px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .node:last-child::after { content: ""; }
+    .node .n { font-weight: 800; color: var(--blue); display: block; margin-bottom: 4px; }
+    .node small { color: var(--muted); }
+    .dag-svg {
+      min-width: 1080px;
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #f8fbfd;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .dag-svg text {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    .svg-title { font-size: 16px; font-weight: 800; fill: #16202a; }
+    .svg-label { font-size: 13px; font-weight: 750; fill: #16202a; }
+    .svg-small { font-size: 11px; fill: #5e6b78; }
+    .svg-node { fill: #ffffff; stroke: #c9d4df; stroke-width: 1.4; }
+    .svg-core { fill: #e8f1f8; stroke: #1769aa; }
+    .svg-risk { fill: #fff4e0; stroke: #a66a00; }
+    .svg-agent { fill: #e9f6ef; stroke: #16734d; }
+    .svg-gate { fill: #f9e8e8; stroke: #b33a3a; }
+    .svg-final { fill: #efeaf8; stroke: #6a4aa0; }
+    .svg-edge { stroke: #7c8b99; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+    .svg-faint { stroke: #aab6c2; stroke-width: 1.1; fill: none; marker-end: url(#arrow); }
+    .surface-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .surface {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+    .surface b { display: block; margin-bottom: 5px; color: #21313f; }
+    .surface span { color: var(--muted); font-size: 0.92rem; }
+    .risk-high { border-left: 4px solid var(--red); }
+    .risk-med { border-left: 4px solid var(--amber); }
+    .risk-gov { border-left: 4px solid var(--violet); }
+    .risk-agent { border-left: 4px solid var(--green); }
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+    .matrix th, .matrix td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    .matrix th { background: #eaf0f5; }
+    .matrix tr:last-child td { border-bottom: 0; }
+    details.source-block {
+      background: #0f1720;
+      color: #d9e2ec;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      border: 1px solid #243242;
+      overflow: hidden;
+    }
+    details.source-block summary {
+      cursor: pointer;
+      padding: 14px 16px;
+      background: #172231;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    details.source-block summary span { font-weight: 800; }
+    details.source-block summary small { color: #a8b6c5; }
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+    .footer-note {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    @media (max-width: 900px) {
+      .span-4, .span-6, .span-8 { grid-column: span 12; }
+      .lane-list, .surface-grid { grid-template-columns: 1fr; }
+      header, main { padding-left: 18px; padding-right: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">ResonantOS vNext Security Agent Research</p>
+    <h1>A governed map from attack surfaces to safe security skills.</h1>
+    <p class="lead">This x-ray distills the security-agent research strategy into a readable architecture: what the app exposes, how the research DAG works, which specialized skills are planned, and where active red-team work is gated. Full source documents are included at the end for deep review.</p>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="panel span-8">
+        <h2>Distilled Explanation</h2>
+        <p>The security agent is not a single scanner. It is a governed research program that first maps architecture and trust boundaries, then fans out into specialist skills, then turns validated findings into deterministic checks.</p>
+        <div class="callout warning">
+          <strong>Important boundary:</strong> the strategy authorizes research, mapping, static scans, and safe fixtures by default. Active exploitation, destructive probing, live network scans, credential mutation, persistence simulation, or external-provider calls require explicit approval.
+        </div>
+        <div class="tagrow">
+          <span class="tag">architecture first</span>
+          <span class="tag">DAG research</span>
+          <span class="tag">surface specialists</span>
+          <span class="tag">safe tests first</span>
+          <span class="tag">approval-gated red team</span>
+          <span class="tag">pipeline promotion</span>
+        </div>
+      </div>
+      <div class="panel span-4">
+        <h2>Target Boundary</h2>
+        <p>ResonantOS vNext: Tauri desktop app, React/Vite webview, Rust backend, browser-first Node bridge, side-panel browser extension, Electron alternative host, local memory service, provider APIs, local subprocesses, and installed agent skills.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Research DAG</h2>
+      <div class="dag">
+        <svg class="dag-svg" viewBox="0 0 1160 720" role="img" aria-labelledby="dag-title dag-desc">
+          <title id="dag-title">Security-agent research DAG</title>
+          <desc id="dag-desc">A directed graph showing context recovery, architecture mapping, threat modeling, specialist fanout, validation gates, safe tests, optional red-team approval, maturity scoring, and pipeline handoff.</desc>
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#7c8b99"></path>
+            </marker>
+          </defs>
+
+          <text class="svg-title" x="36" y="36">Architecture-first security research graph</text>
+          <text class="svg-small" x="36" y="58">The plan maps trust boundaries before tests, then promotes only validated checks.</text>
+
+          <rect class="svg-node svg-core" x="40" y="92" width="170" height="76" rx="8"></rect>
+          <text class="svg-label" x="60" y="122">S0 Recover Context</text>
+          <text class="svg-small" x="60" y="145">reviewer + profiler + pipeline</text>
+
+          <rect class="svg-node svg-core" x="270" y="92" width="180" height="76" rx="8"></rect>
+          <text class="svg-label" x="290" y="122">S1 Architecture Map</text>
+          <text class="svg-small" x="290" y="145">assets, flows, trust boundaries</text>
+
+          <rect class="svg-node svg-core" x="510" y="92" width="180" height="76" rx="8"></rect>
+          <text class="svg-label" x="530" y="122">S2 Vector Catalog</text>
+          <text class="svg-small" x="530" y="145">safe, approval, blocked tags</text>
+
+          <rect class="svg-node svg-agent" x="750" y="70" width="190" height="64" rx="8"></rect>
+          <text class="svg-label" x="770" y="98">S4 Agentic Intel</text>
+          <text class="svg-small" x="770" y="120">worms, memory poisoning, tool abuse</text>
+
+          <rect class="svg-node svg-risk" x="750" y="166" width="190" height="64" rx="8"></rect>
+          <text class="svg-label" x="770" y="194">S3 Specialist Fanout</text>
+          <text class="svg-small" x="770" y="216">17 surface and agent lanes</text>
+
+          <rect class="svg-node" x="70" y="286" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="88" y="316">Tauri IPC + CSP</text>
+          <rect class="svg-node" x="282" y="286" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="300" y="316">Bridge + Extension</text>
+          <rect class="svg-node" x="494" y="286" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="512" y="316">Electron IPC</text>
+          <rect class="svg-node" x="706" y="286" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="724" y="316">Local Listeners</text>
+          <rect class="svg-node" x="918" y="286" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="936" y="316">Agent Skill Safety</text>
+
+          <rect class="svg-node" x="70" y="374" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="88" y="406">Secrets + Data</text>
+          <rect class="svg-node" x="282" y="374" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="300" y="406">Provider Network</text>
+          <rect class="svg-node" x="494" y="374" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="512" y="406">Native + Terminal</text>
+          <rect class="svg-node" x="706" y="374" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="724" y="406">Supply + Release</text>
+          <rect class="svg-node" x="918" y="374" width="180" height="54" rx="8"></rect>
+          <text class="svg-label" x="936" y="406">External Integrations</text>
+
+          <rect class="svg-node" x="80" y="514" width="190" height="70" rx="8"></rect>
+          <text class="svg-label" x="100" y="542">S5 Tool + Skill Design</text>
+          <text class="svg-small" x="100" y="564">prefer existing tools</text>
+
+          <rect class="svg-node svg-agent" x="325" y="514" width="190" height="70" rx="8"></rect>
+          <text class="svg-label" x="345" y="542">S6-S7 Skill Validation</text>
+          <text class="svg-small" x="345" y="564">runtime + malicious audit</text>
+
+          <rect class="svg-node svg-core" x="570" y="514" width="190" height="70" rx="8"></rect>
+          <text class="svg-label" x="590" y="542">S8 Safe Tests</text>
+          <text class="svg-small" x="590" y="564">fixtures, static scans, local checks</text>
+
+          <rect class="svg-node svg-gate" x="815" y="496" width="210" height="60" rx="8"></rect>
+          <text class="svg-label" x="835" y="524">S9 Approval Gate</text>
+          <text class="svg-small" x="835" y="546">active red-team only if approved</text>
+
+          <rect class="svg-node svg-final" x="815" y="594" width="210" height="60" rx="8"></rect>
+          <text class="svg-label" x="835" y="622">S10-S11 Maturity + CI</text>
+          <text class="svg-small" x="835" y="644">score, gaps, observe/warn/block</text>
+
+          <path class="svg-edge" d="M210 130 H270"></path>
+          <path class="svg-edge" d="M450 130 H510"></path>
+          <path class="svg-edge" d="M690 130 C716 130 722 102 750 102"></path>
+          <path class="svg-edge" d="M690 130 C720 130 720 198 750 198"></path>
+          <path class="svg-edge" d="M845 230 V260"></path>
+          <path class="svg-faint" d="M845 260 C845 276 160 260 160 286"></path>
+          <path class="svg-faint" d="M845 260 C845 276 372 260 372 286"></path>
+          <path class="svg-faint" d="M845 260 C845 276 584 260 584 286"></path>
+          <path class="svg-faint" d="M845 260 C845 276 796 260 796 286"></path>
+          <path class="svg-faint" d="M845 260 C845 276 1008 260 1008 286"></path>
+          <path class="svg-faint" d="M845 260 C845 360 160 354 160 374"></path>
+          <path class="svg-faint" d="M845 260 C845 360 372 354 372 374"></path>
+          <path class="svg-faint" d="M845 260 C845 360 584 354 584 374"></path>
+          <path class="svg-faint" d="M845 260 C845 360 796 354 796 374"></path>
+          <path class="svg-faint" d="M845 260 C845 360 1008 354 1008 374"></path>
+
+          <path class="svg-edge" d="M584 428 C584 472 175 470 175 514"></path>
+          <path class="svg-edge" d="M270 549 H325"></path>
+          <path class="svg-edge" d="M515 549 H570"></path>
+          <path class="svg-edge" d="M760 549 H815"></path>
+          <path class="svg-edge" d="M920 556 V594"></path>
+          <path class="svg-edge" d="M760 584 C790 624 800 624 815 624"></path>
+        </svg>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel span-6">
+        <h2>Explanation Lanes</h2>
+        <ul class="lane-list">
+          <li><strong>Surface</strong>What systems, modes, and entrypoints exist.</li>
+          <li><strong>Properties</strong>Single-user desktop posture, local state, token models, no TLS on loopback.</li>
+          <li><strong>Components</strong>Tauri, Electron, browser-first bridge, extension, memory service, provider clients, agents.</li>
+          <li><strong>Flows</strong>IPC calls, bridge routes, provider prompts, local file scans, subprocess launches.</li>
+          <li><strong>Dependencies</strong>npm, Cargo, provider APIs, GitHub Actions, Arcanum skills, local CLIs.</li>
+          <li><strong>Risk Questions</strong>What can cross trust boundaries, gain tool access, leak data, or become a CI check.</li>
+        </ul>
+      </div>
+      <div class="panel span-6">
+        <h2>Promotion Logic</h2>
+        <table class="matrix">
+          <tr><th>Level</th><th>Meaning</th></tr>
+          <tr><td>0 Unknown</td><td>Surface exists but is not mapped or tested.</td></tr>
+          <tr><td>1 Mapped</td><td>Assets, flows, boundaries, and vectors are documented.</td></tr>
+          <tr><td>2 Guarded</td><td>Controls are documented and at least one deterministic test exists.</td></tr>
+          <tr><td>3 Stress-tested</td><td>Safe simulations or fuzz/property tests exercise abuse paths.</td></tr>
+          <tr><td>4 Managed</td><td>Checks run in CI or repeatable harnesses with owners and evidence.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Specialist Skill Families</h2>
+      <div class="surface-grid">
+        <div class="surface risk-high"><b>Tauri IPC Boundary</b><span>128 commands, capability gates, CSP-null escalation paths.</span></div>
+        <div class="surface risk-high"><b>Webview CSP & Injection</b><span>React rendering, markdown, XSS backstop, frontend-to-core path.</span></div>
+        <div class="surface risk-high"><b>Native Loading & Terminal</b><span>PTY shell, sh -lc/cmd /C, libloading, env-driven native bridge.</span></div>
+        <div class="surface risk-med"><b>Browser-First Bridge</b><span>Bridge token, capability tokens, route tiers, side-panel extension.</span></div>
+        <div class="surface risk-med"><b>Electron IPC</b><span>Renderer-to-main invoke mirror, sandbox posture, local servers.</span></div>
+        <div class="surface risk-med"><b>Local Listener Topology</b><span>Loopback services, memory host override, no TLS, rate-limit gaps.</span></div>
+        <div class="surface risk-med"><b>Provider Network</b><span>Configurable base URLs, hardcoded LAN endpoint, SSRF and quota concerns.</span></div>
+        <div class="surface risk-agent"><b>Agent Skill Malware Analysis</b><span>Suspicious scripts, secret reads, network egress, persistence, tool mismatch.</span></div>
+        <div class="surface risk-agent"><b>Agentic Attack Intelligence</b><span>Prompt-injection worms, memory poisoning, goal hijack, approval bypass.</span></div>
+        <div class="surface risk-gov"><b>Disclosure & Release Trust</b><span>SECURITY.md, code signing, notarization, SBOM, provenance.</span></div>
+        <div class="surface risk-med"><b>Secrets & Data Lifecycle</b><span>Plaintext secrets, env forwarding, logs, retention, SQLite encryption gaps.</span></div>
+        <div class="surface risk-med"><b>Supply Chain</b><span>npm, Cargo, GitHub Actions, vitest CVE, cargo audit, action hardening.</span></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel span-6">
+        <h2>What Is Already Known</h2>
+        <p>The current evidence already identifies high-signal risk areas: CSP is disabled, addon capability state is unsigned JSON, provider secrets need stronger file permissions/encryption, bridge route tiers need review, Electron mode needs its own IPC boundary, and installed skills/agents need hostile-content review.</p>
+      </div>
+      <div class="panel span-6">
+        <h2>What Comes Next</h2>
+        <p>The first practical slice should validate the installed skill surfaces, then start with the Tauri IPC boundary and webview CSP path. Those two determine how hard it is for injected or malicious content to reach powerful local capabilities.</p>
+      </div>
+      <div class="panel span-12">
+        <h2>Development Handoff Rule</h2>
+        <p>Whenever research finds something that needs development, route it through an invoke handoff first. The handoff must use context-builder to prepare the smallest sufficient implementation context before any code change or new check is built.</p>
+        <pre>$invoke handoff use context builder to prepare development for &lt;finding-or-surface&gt;</pre>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Full Documents</h2>
+      <p class="footer-note">These are embedded as escaped text for offline review. They are not executed, fetched, or rendered through remote services.</p>
+      
+      <details class="source-block" open>
+        <summary>
+          <span>Security Agent Research Strategy</span>
+          <small>Primary distilled strategy document</small>
+        </summary>
+        <pre># Security Agent Research Strategy
+
+## Purpose
+
+Design a governed research-and-development program for a ResonantOS security agent that can:
+
+- map every meaningful attack surface and attack vector in the app;
+- generate a security architecture view of the current system;
+- split red-team work into specialized, reusable skills;
+- select existing tools before inventing local checks;
+- measure security maturity, identify gaps, and create deterministic tests;
+- feed validated checks into the existing registry-driven security pipeline.
+
+This is a strategy artifact, not permission to run invasive tests. Any active exploitation, destructive probing, broad network scanning, credential attack, or persistence simulation must pass an explicit approval gate first.
+
+## Starting Evidence
+
+Existing starting points:
+
+- The first `security-reviewer` run identifies real surfaces across Tauri IPC, webview/CSP, capability gates, provider HTTP requests, local subnet discovery, subprocess delegation, addon manifests, browser automation, Telegram, Paperclip, archive storage, local files, logs, and supply chain.
+- The `threat-model-profiler` run adds entry-point and topology evidence for browser-first bridge routes, side-panel extension communication, Electron IPC mode, local listener bind behavior, bridge/capability tokens, memory-service host overrides, terminal shell execution, native library loading, hardcoded LAN endpoints, unsigned artifacts, and the missing `SECURITY.md` disclosure surface.
+- The existing security pipeline MVP already defines a registry-driven check control plane in `.github/security-pipeline/checks.yml`.
+- The MVP has completed `SWU-SP-001` through `SWU-SP-003`; `SWU-SP-004` is blocked in this shell by missing `npm`.
+
+The new security agent should not replace that pipeline. It should sit above it as a research, design, red-team simulation, and maturity-scoring system that emits checks and evidence into the pipeline.
+
+## Threat Model Profiler Delta
+
+The profiler evidence is already partially covered by the existing security strategy, but it adds these explicit lanes:
+
+| Profiler finding | Current status in this strategy |
+| --- | --- |
+| `SECURITY.md` absent | Added to `security-disclosure-release-trust`. |
+| Browser-first bridge routes and capability-token split | Added to `security-browser-first-bridge-extension`. |
+| Side-panel extension reads page content and talks to bridge | Added to browser-first/extension trust boundary. |
+| Electron IPC mirrors command surface | Added to `security-electron-ipc-boundary`. |
+| Memory service host can be overridden to `0.0.0.0` | Added to `security-local-listener-topology`. |
+| Hardcoded LAN endpoint `192.168.1.77:30004` | Covered by provider-network and local-listener lanes. |
+| Terminal add-on intentionally runs `sh -lc` / `cmd /C` | Added to `security-native-loading-terminal`. |
+| `RESONANTOS_NATIVE_BROWSER_BRIDGE` can influence `Library::new` | Added to native-loading lane. |
+| Full host env forwarded to Hermes/OpenCode | Covered by subprocess/toolchain and secrets/data lifecycle lanes. |
+| Prompt content passed in process argv | Added to subprocess/toolchain lane. |
+| Unsigned release artifacts / no code signing | Added to disclosure/release-trust lane. |
+| No bridge/server rate limiting | Added to local-listener topology lane. |
+| Electron screenshot temp cleanup | Covered by file/data lifecycle lane. |
+
+## Strategy Shape
+
+Use a DAG, not a single linear audit.
+
+The work has dependencies:
+
+1. Asset and architecture mapping must happen before threat modeling.
+2. Threat modeling must happen before selecting red-team simulations.
+3. Safe static and unit-level tests can run before active dynamic tests.
+4. Active tests require authorization and scoped fixtures.
+5. Maturity scoring depends on evidence from mapping, tooling, test results, and remediation decisions.
+
+The DAG approach has merit because each surface can be researched independently while still joining through a common evidence contract. It also prevents the agent from jumping directly from a finding to an exploit without architecture context, owner boundary, and approval.
+
+## Stage DAG
+
+```mermaid
+flowchart TD
+  A[&quot;S0 Recover Context&quot;] --&gt; B[&quot;S1 Architecture Surface Map&quot;]
+  B --&gt; C[&quot;S2 Threat Model And Vector Catalog&quot;]
+  C --&gt; D1[&quot;S3a Tauri IPC And Capability Skill&quot;]
+  C --&gt; D2[&quot;S3b Webview CSP And Frontend Injection Skill&quot;]
+  C --&gt; D3[&quot;S3c Subprocess And Toolchain Skill&quot;]
+  C --&gt; D4[&quot;S3d Provider HTTP And SSRF Skill&quot;]
+  C --&gt; D5[&quot;S3e Addon Manifest And Filesystem Skill&quot;]
+  C --&gt; D6[&quot;S3f Browser Automation And CDP Skill&quot;]
+  C --&gt; D7[&quot;S3g Secrets And Data Lifecycle Skill&quot;]
+  C --&gt; D8[&quot;S3h Supply Chain And Release Integrity Skill&quot;]
+  C --&gt; D9[&quot;S3i External Integrations Skill&quot;]
+  C --&gt; D10[&quot;S3j Installed Agent Skills Validation Skill&quot;]
+  C --&gt; D11[&quot;S3k Malicious Skill And Agent Behavior Skill&quot;]
+  C --&gt; D12[&quot;S3l Browser-First Bridge And Extension Skill&quot;]
+  C --&gt; D13[&quot;S3m Electron IPC Skill&quot;]
+  C --&gt; D14[&quot;S3n Local Listener And Memory Service Skill&quot;]
+  C --&gt; D15[&quot;S3o Native Loading And Terminal Execution Skill&quot;]
+  C --&gt; D16[&quot;S3p Disclosure And Release Trust Skill&quot;]
+  C --&gt; T[&quot;S4 Agentic Attack Intelligence&quot;]
+  D1 --&gt; E[&quot;S5 Tool Selection And Harness Design&quot;]
+  D2 --&gt; E
+  D3 --&gt; E
+  D4 --&gt; E
+  D5 --&gt; E
+  D6 --&gt; E
+  D7 --&gt; E
+  D8 --&gt; E
+  D9 --&gt; E
+  D10 --&gt; E
+  D11 --&gt; E
+  D12 --&gt; E
+  D13 --&gt; E
+  D14 --&gt; E
+  D15 --&gt; E
+  D16 --&gt; E
+  T --&gt; E
+  E --&gt; J[&quot;S6 Installed Skill Runtime Validation&quot;]
+  J --&gt; K[&quot;S7 Malicious Skill And Agent Audit&quot;]
+  K --&gt; F[&quot;S8 Safe Test Generation&quot;]
+  E --&gt; G[&quot;S9 Authorized Red-Team Simulation&quot;]
+  F --&gt; H[&quot;S10 Maturity Scoring And Gap Register&quot;]
+  G --&gt; H
+  H --&gt; I[&quot;S11 Pipeline Promotion Handoff&quot;]
+```
+
+## Security Architecture Output
+
+The research must produce a security architecture artifact with at least these views:
+
+| View | Required content |
+| --- | --- |
+| Asset map | User data, provider secrets, Telegram token, app state, addon manifests, browser profiles, archive DB, logs, packaged artifacts, installed agent skills, bridge tokens, capability tokens, extension config, Hermes/OpenCode profiles |
+| Trust boundaries | Tauri webview to Rust IPC, Electron renderer to main IPC, Chrome/Firefox extension to bridge server, addon capability checks, subprocess boundary, provider network boundary, browser/CDP boundary, local filesystem boundary |
+| Data flows | Secret write/read, provider request, archive ingest, browser session lifecycle, addon sideload, Telegram polling, Paperclip API calls, bridge route requests, memory service requests, prompt handoff to Hermes/OpenCode, generated extension token config |
+| Control map | CSP, Tauri capabilities, Electron context isolation/sandbox, bridge bearer token, bridge capability tokens, CORS extension origin, command gates, path containment, lockfiles, audits, redaction, local bind addresses |
+| Attack tree | Per-surface preconditions, vectors, exploit paths, current controls, missing controls, safe tests |
+| Maturity matrix | Surface maturity score, evidence, gaps, next check, promotion target |
+| Agentic attack map | Malicious skill instructions, suspicious scripts, network exfiltration, credential/key access, memory poisoning, tool misuse, worm-like propagation, developer extension analogues |
+
+## Surface And Skill Families
+
+| Skill family | Surface | Vector focus | Candidate outputs |
+| --- | --- | --- | --- |
+| `security-tauri-ipc-boundary` | `#[tauri::command]`, capability gates | Ungated command invocation, payload size abuse, privilege escalation through state writes | command inventory, gate coverage test, IPC fuzz fixtures |
+| `security-webview-csp-injection` | React/Vite webview and CSP | XSS, unsafe HTML rendering, CSP bypass, frontend-to-IPC escalation | CSP policy proposal, sanitizer tests, DOM sink Semgrep rules |
+| `security-subprocess-toolchain` | `Command::new`, Node/Rust scripts, opencode, Hermes/OpenCode process launch | Command injection, unsafe env propagation, binary resolution hijack, prompt leakage through process argv | command sink map, PATH hardening checks, subprocess regression tests, env-scope tests |
+| `security-provider-network` | `reqwest`, provider discovery, local subnet scan | SSRF, internal host probing, quota abuse, provider request leakage | URL allowlist strategy, subnet consent tests, provider budget checks |
+| `security-addon-filesystem` | addon manifests, audio import, archive/obsidian paths | Path traversal, manifest id traversal, broad filesystem writes | manifest id validator tests, path containment fixtures |
+| `security-browser-automation` | Chromium sessions, CDP, native browser FFI | exposed loopback devtools, session id predictability, profile residue, unsafe FFI review | CDP exposure analysis, session id tests, orphan cleanup checks |
+| `security-secrets-data-lifecycle` | provider secrets, Telegram token, logs, archive data | plaintext secrets, weak permissions, log leakage, retention gaps | vault gap report, permission tests, retention policy checks |
+| `security-supply-chain-release` | npm, Cargo, GitHub Actions, packaging | vulnerable deps, unpinned actions, provenance gaps, SBOM absence | npm/cargo/OSV adapters, action hardening, SBOM/provenance plan |
+| `security-external-integrations` | Telegram, Paperclip, provider APIs, Living Archive MCP | token overwrite, polling abuse, third-party data exposure | integration threat model, token gate tests, external API evidence map |
+| `security-agent-skill-runtime-validation` | `.agents/skills`, `.codex/skills`, `.claude/skills`, `.github/skills`, `tools/arcanum` | stale installs, missing schema/catalog/script dependencies, malformed frontmatter, command resolution drift, permission metadata gaps | installed skill inventory, frontmatter/schema validator, command resolution smoke, missing-support-file report |
+| `security-agent-skill-malware-analysis` | installed skills, agents, hooks, scripts, generated commands, MCP/tool configs | malicious instructions, unexpected shell/network/file access, secret reads, user-data exfiltration, persistence, obfuscation, privilege mismatch | suspicious behavior ledger, permission-to-purpose matrix, network/shell call inventory, denylist and allowlist rules |
+| `security-agentic-attack-intelligence` | agent workflows, memory, tools, skills, retrieved content, developer extension analogues | prompt-injection worms, memory poisoning, goal hijack, excessive agency, tool abuse, approval bypass, multi-agent cascading failures | attack taxonomy, abuse-case matrix, adversarial prompt fixtures, prevention checklist |
+| `security-browser-first-bridge-extension` | `browser-first` bridge server, side-panel extension, generated bridge config | route authorization gaps, bridge token exposure, capability-token scope drift, CORS origin assumptions, page-content ingestion, extension supply chain | bridge route matrix, capability-token coverage test, extension trust-boundary map |
+| `security-electron-ipc-boundary` | `electron-host` renderer-to-main IPC, static/provider/wallet servers | mirrored command surface without per-command auth, sandbox posture, preload boundary bypass, local server exposure | Electron IPC inventory, contextIsolation/sandbox posture test, command parity matrix |
+| `security-local-listener-topology` | Vite, bridge server, memory service, Hermes dashboard, Electron local servers, CDP | loopback assumptions, `0.0.0.0` env overrides, no TLS, no rate limiting, local process access to tokens/ports | listener inventory, bind-host guard tests, route rate-limit gap report |
+| `security-native-loading-terminal` | terminal addon, PTY, `sh -lc`, `cmd /C`, `libloading`, native browser bridge env var | intended shell execution blast radius, arbitrary native library load, PATH hijack, argv prompt leakage | shell/native execution threat model, env-var library-load tests, PATH pinning recommendations |
+| `security-disclosure-release-trust` | `SECURITY.md`, GitHub Actions artifacts, signing/notarization, dependency disclosure | missing vulnerability disclosure path, unsigned artifacts, code-signing gaps, security release process absence | disclosure policy draft, artifact trust matrix, signing/provenance roadmap |
+
+Each skill should have:
+
+- scope and explicit out-of-scope boundaries;
+- input discovery commands;
+- safe default tests;
+- red-team simulation tests requiring approval;
+- tool requirements and installation assumptions;
+- evidence schema;
+- maturity criteria;
+- promotion path into `.github/security-pipeline/checks.yml`.
+
+For skill and agent validation, the evidence must also include:
+
+- scripts and hooks invoked by the skill or agent;
+- network-capable commands such as `curl`, `wget`, `fetch`, `Invoke-WebRequest`, `reqwest`, `axios`, `netcat`, and webhook clients;
+- secret and user-data access patterns, including `.env`, SSH keys, cloud credentials, browser profiles, wallet paths, token files, and `.resonantos/`;
+- persistence or propagation patterns, including writing to memory files, startup folders, hooks, shell profiles, IDE extension directories, or generated command surfaces;
+- tool-call justification: every requested tool or permission must match the skill&#x27;s stated purpose.
+
+## Tool Research Baseline
+
+Use established tools before writing custom adapters:
+
+| Area | Tool candidates | Why they fit |
+| --- | --- | --- |
+| Standards and criteria | OWASP ASVS 5.0.0, OWASP SAMM | ASVS gives technical verification requirements; SAMM gives program maturity structure. |
+| Tauri security | Tauri security docs, capabilities, CSP, IPC trust boundaries | ResonantOS is a Tauri desktop app, so webview-to-core boundaries are first-class. |
+| Agentic skill security | OWASP Agentic Skills Top 10, OWASP Agentic AI threats, OWASP AI Agent Security Cheat Sheet | Treats skills as a behavior/execution layer with risks around file, network, shell, memory, and tool orchestration. |
+| Static analysis | CodeQL, Semgrep | CodeQL fits GitHub code scanning; Semgrep supports TypeScript, JavaScript, Rust, YAML, and custom rules. |
+| Dependency vulnerabilities | npm audit, OSV-Scanner, cargo-audit, GitHub dependency review | Covers npm and Cargo lockfiles plus PR dependency deltas. |
+| Secrets | Gitleaks, TruffleHog, GitHub secret scanning where available | Finds committed credentials and can be wired into CI. |
+| Supply-chain posture | OpenSSF Scorecard, action pinning checks, SLSA/provenance research | Measures repo hygiene and release integrity gaps. |
+| Dynamic web/API probing | OWASP ZAP Automation Framework, Nuclei | Useful only against scoped local/staging targets; active scans require authorization. |
+| SBOM and image/package checks | Syft, Grype, OSV-Scanner | Useful once release artifacts and packaged app boundaries are stable. |
+| Developer-extension analogues | VS Code Workspace Trust, extension manifest/activation events, extension runtime security docs | Agent skills resemble IDE extensions: they can be installed from untrusted sources and can execute code or access workspace data. |
+
+Reference sources checked:
+
+- OWASP ASVS: https://owasp.org/www-project-application-security-verification-standard/
+- OWASP SAMM: https://owasp.org/www-project-samm/
+- OWASP Agentic Skills Top 10: https://owasp.org/www-project-agentic-skills-top-10/
+- OWASP Agentic AI Threats and Mitigations: https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/
+- OWASP AI Agent Security Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html
+- OWASP Top 10 for LLM Applications: https://owasp.org/www-project-top-10-for-large-language-model-applications/
+- Tauri security model: https://v2.tauri.app/security/
+- VS Code Workspace Trust: https://code.visualstudio.com/docs/editing/workspaces/workspace-trust
+- VS Code extension runtime security: https://code.visualstudio.com/docs/configure/extensions/extension-runtime-security
+- VS Code activation events: https://code.visualstudio.com/api/references/activation-events
+- GitHub CodeQL/code scanning: https://docs.github.com/en/code-security/concepts/code-scanning/about-code-scanning
+- GitHub dependency review: https://docs.github.com/en/code-security/concepts/supply-chain-security/about-dependency-review
+- Semgrep docs: https://semgrep.dev/docs/
+- OSV-Scanner docs: https://google.github.io/osv-scanner/
+- cargo-audit: https://github.com/rustsec/rustsec/tree/main/cargo-audit
+- Gitleaks: https://github.com/gitleaks/gitleaks
+- OWASP ZAP Automation Framework: https://www.zaproxy.org/docs/automate/automation-framework/
+- Nuclei docs: https://docs.projectdiscovery.io/opensource/nuclei/overview
+- OpenSSF Scorecard: https://github.com/ossf/scorecard
+
+## Maturity Model
+
+Score each surface at one of five levels:
+
+| Level | Name | Meaning |
+| --- | --- | --- |
+| 0 | Unknown | Surface exists but is not mapped or tested. |
+| 1 | Mapped | Assets, flows, boundaries, and obvious vectors are documented. |
+| 2 | Guarded | Current controls are documented and at least one deterministic test exists. |
+| 3 | Stress-tested | Safe red-team simulations or fuzz/property tests exercise likely abuse paths. |
+| 4 | Managed | Checks are in CI or a repeatable local harness with evidence, owners, and remediation lifecycle. |
+
+The initial target is level 2 for every surface, level 3 for the highest-risk surfaces, and level 4 for supply chain plus any fix that becomes a regression risk.
+
+Installed agent skills have a stricter readiness rule: a skill cannot be used as a security-control primitive until it reaches level 2. That means it is installed, discoverable, structurally valid, has required support files, and its command or resolver path can be smoke-tested.
+
+Agent skills and agents also require a hostile-content rule: a skill cannot reach level 2 if it contains unexplained network egress, shell execution, secret reads, memory mutation, persistence, or broad filesystem access that is not justified by its purpose and approved by the operator.
+
+## Red-Team Test Policy
+
+Default allowed without additional approval:
+
+- static scans;
+- unit tests and fixtures;
+- offline malicious-content review of skills, agents, scripts, hooks, and command files;
+- permission-to-purpose review for tool calls and runtime permissions;
+- network/shell/secret-access inventory without executing those operations;
+- local path traversal fixtures inside temporary directories;
+- IPC payload tests against mocked or test-only commands;
+- dependency and secret scans;
+- architecture and threat-model research.
+
+Requires explicit approval:
+
+- active scanner runs such as ZAP activeScan or broad Nuclei templates;
+- executing suspicious skill scripts or hooks;
+- live network egress tests from installed skills or agents;
+- local subnet probing beyond existing code inspection;
+- exploit chains that write outside a temp directory;
+- credential overwrite/delete simulations against real app state;
+- browser/CDP takeover demonstrations against live user profiles;
+- tests that call paid external provider APIs or Telegram/Paperclip endpoints.
+
+Always blocked unless separately authorized in a dedicated task:
+
+- persistence, malware-like behavior, exfiltration, destructive deletion, self-replication, or attacks against third-party systems.
+
+## Promotion Path
+
+Research outputs should flow into implementation through this sequence:
+
+1. Create or update a skill design for one surface family.
+2. When any finding requires development, do not implement directly from the research note. Create an invoke handoff route using the exact transition sentence: `$invoke handoff use context builder to prepare development for &lt;finding-or-surface&gt;`.
+3. The handoff must use `context-builder` to gather the smallest sufficient repository evidence, target files, constraints, validation commands, and risk boundaries for that specific development item.
+4. Generate safe tests and fixtures for that family only after the handoff defines the implementation boundary.
+5. If useful, add a check adapter to `scripts/security-pipeline/checks/`.
+6. Add a registry entry to `.github/security-pipeline/checks.yml` with `observe` or `warn` first.
+7. Promote to `block` only after deterministic validation and low false-positive risk.
+8. Record maturity score changes and remaining gaps.
+
+Development trigger rule:
+
+```text
+$invoke handoff use context builder to prepare development for &lt;finding-or-surface&gt;
+```
+
+Use this whenever a mapped gap, failing maturity criterion, missing control, unsafe default, vulnerable dependency, malicious-skill signal, or red-team test idea becomes an implementation candidate.
+
+## First Recommended Work Slice
+
+Start with `security-tauri-ipc-boundary`.
+
+Reason:
+
+- The first reviewer report identified multiple ungated commands and the null CSP makes webview-to-IPC escalation a central risk.
+- It can be tested safely with static inventory and deterministic unit-like checks.
+- It produces reusable patterns for later skills: surface inventory, control coverage, fixture attacks, and maturity scoring.
+
+The second slice should be `security-webview-csp-injection`, because CSP and DOM sinks determine how hard it is for an attacker to reach IPC commands.
+
+The third slice should be `security-addon-filesystem`, because addon manifest id traversal and broad filesystem writes are concrete, high-signal vectors with deterministic tests.
+
+Before creating new generated security skills, run `security-agent-skill-runtime-validation` once against the current install. The dispatch-spec validator already exposed one example gap: the repo-local dispatch validator exists, but its default schema/catalog lookup points at `.agents/formulae/dispatch-spec/`, which is not present after the install. That class of gap should be caught by the installed-skill validation stage.
+</pre>
+      </details>
+    
+      
+      <details class="source-block">
+        <summary>
+          <span>Dispatch Route JSON</span>
+          <small>Validated dispatch-spec route</small>
+        </summary>
+        <pre>{
+  &quot;dispatch_id&quot;: &quot;resonantos-security-agent-research-20260603&quot;,
+  &quot;parent_dispatch_id&quot;: null,
+  &quot;intent&quot;: {
+    &quot;raw&quot;: &quot;Prepare a research strategy to map all ResonantOS security attack surfaces and vectors, including profiler-discovered browser-first, Electron, extension, local listener, native loading, and release-trust surfaces, then design specialized red-team skills, maturity validation, gap discovery, tests, and security architecture output.&quot;,
+    &quot;objective&quot;: &quot;Create a governed DAG research route for ResonantOS security-agent R&amp;D that maps architecture and attack surfaces before authorizing specialized red-team skill design and test generation.&quot;,
+    &quot;target_artifact&quot;: &quot;development/security-pipeline/research/SECURITY-AGENT-RESEARCH-STRATEGY.md&quot;,
+    &quot;operator_sentence&quot;: &quot;Use dispatch-spec to govern a staged DAG: recover context, map surfaces, research agentic attack intelligence, fan out by security surface, synthesize tools and skill specs, validate installed agent skills, audit malicious skill and agent behavior, generate safe tests, gate active red-team simulations, score maturity, and hand off validated checks to the security pipeline.&quot;
+  },
+  &quot;mode&quot;: &quot;research&quot;,
+  &quot;techniques&quot;: [
+    {
+      &quot;id&quot;: &quot;dag_surface_fanout&quot;,
+      &quot;source&quot;: &quot;local-extension&quot;,
+      &quot;validation_note&quot;: &quot;Used as a research graph technique: dependency-sensitive mapping and fanout must be reflected in steps, joins, and gates.&quot;
+    },
+    &quot;delegation_boundary&quot;,
+    &quot;execution_receipt_handoff&quot;,
+    &quot;state_namespace_boundary&quot;,
+    &quot;memory_promotion_split&quot;
+  ],
+  &quot;route_menu&quot;: {
+    &quot;context_hint&quot;: &quot;The route chooses architecture-first DAG fanout because attack surfaces are cross-layer and unsafe to probe before boundaries and authorization are known.&quot;,
+    &quot;items&quot;: [
+      {
+        &quot;id&quot;: &quot;architecture-first-dag&quot;,
+        &quot;label&quot;: &quot;Architecture-first DAG&quot;,
+        &quot;description&quot;: &quot;Map trust boundaries and surfaces before specialized skill design and red-team simulation.&quot;,
+        &quot;capability_ref&quot;: &quot;dispatch-spec&quot;,
+        &quot;pattern&quot;: &quot;synthesis&quot;
+      },
+      {
+        &quot;id&quot;: &quot;pipeline-first&quot;,
+        &quot;label&quot;: &quot;Pipeline-first&quot;,
+        &quot;description&quot;: &quot;Continue the existing supply-chain MVP before broader security-agent design.&quot;,
+        &quot;capability_ref&quot;: &quot;task-session&quot;,
+        &quot;pattern&quot;: &quot;sequential&quot;
+      },
+      {
+        &quot;id&quot;: &quot;immediate-red-team&quot;,
+        &quot;label&quot;: &quot;Immediate red-team&quot;,
+        &quot;description&quot;: &quot;Start active attack simulation immediately; rejected because authorization and fixture boundaries are not yet defined.&quot;,
+        &quot;capability_ref&quot;: &quot;experiment-harness&quot;,
+        &quot;pattern&quot;: &quot;toy_game&quot;
+      }
+    ],
+    &quot;selected_item_id&quot;: &quot;architecture-first-dag&quot;
+  },
+  &quot;boundary_evidence&quot;: {
+    &quot;boundaries&quot;: [
+      {
+        &quot;boundary_id&quot;: &quot;research-to-execution&quot;,
+        &quot;kind&quot;: &quot;capability_handoff&quot;,
+        &quot;from_owner&quot;: &quot;dispatch-spec&quot;,
+        &quot;to_owner&quot;: &quot;task-session&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;installed-agent-skill-validation&quot;,
+          &quot;malicious-skill-agent-audit&quot;,
+          &quot;safe-test-generation&quot;,
+          &quot;pipeline-promotion-handoff&quot;
+        ],
+        &quot;contract&quot;: &quot;Task Session may implement safe deterministic tests and pipeline checks only inside approved task scope.&quot;,
+        &quot;on_violation&quot;: &quot;block&quot;
+      },
+      {
+        &quot;boundary_id&quot;: &quot;active-red-team-approval&quot;,
+        &quot;kind&quot;: &quot;human_approval&quot;,
+        &quot;from_owner&quot;: &quot;security-agent-research&quot;,
+        &quot;to_owner&quot;: &quot;experiment-harness&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;authorized-red-team-simulation&quot;
+        ],
+        &quot;contract&quot;: &quot;Active or destructive red-team simulation requires explicit operator approval, scoped target, rollback plan, and evidence receipt.&quot;,
+        &quot;on_violation&quot;: &quot;block&quot;
+      }
+    ],
+    &quot;authority&quot;: {
+      &quot;lifecycle&quot;: &quot;dispatch-spec&quot;,
+      &quot;research&quot;: &quot;context-builder&quot;,
+      &quot;skill_design&quot;: &quot;skill-creator&quot;,
+      &quot;execution&quot;: &quot;task-session&quot;,
+      &quot;active_simulation&quot;: &quot;experiment-harness&quot;,
+      &quot;validation&quot;: &quot;security-pipeline&quot;,
+      &quot;evidence&quot;: &quot;signal-observer&quot;,
+      &quot;promotion&quot;: &quot;owning capability&quot;
+    },
+    &quot;receipts&quot;: [
+      {
+        &quot;receipt_id&quot;: &quot;surface-map-receipt&quot;,
+        &quot;producer&quot;: &quot;context-builder&quot;,
+        &quot;required_fields&quot;: [
+          &quot;run_id&quot;,
+          &quot;artifacts&quot;,
+          &quot;validation_result&quot;,
+          &quot;audit_reference&quot;,
+          &quot;residue&quot;
+        ],
+        &quot;stores&quot;: [
+          &quot;development/security-pipeline/research/surface-map.md&quot;
+        ],
+        &quot;on_missing&quot;: &quot;block&quot;
+      },
+      {
+        &quot;receipt_id&quot;: &quot;skill-design-receipt&quot;,
+        &quot;producer&quot;: &quot;skill-creator&quot;,
+        &quot;required_fields&quot;: [
+          &quot;run_id&quot;,
+          &quot;artifacts&quot;,
+          &quot;validation_result&quot;,
+          &quot;approval_record&quot;,
+          &quot;audit_reference&quot;,
+          &quot;residue&quot;
+        ],
+        &quot;stores&quot;: [
+          &quot;development/security-pipeline/research/skill-designs/&quot;
+        ],
+        &quot;on_missing&quot;: &quot;flag&quot;
+      },
+      {
+        &quot;receipt_id&quot;: &quot;test-generation-receipt&quot;,
+        &quot;producer&quot;: &quot;task-session&quot;,
+        &quot;required_fields&quot;: [
+          &quot;run_id&quot;,
+          &quot;artifacts&quot;,
+          &quot;validation_result&quot;,
+          &quot;approval_record&quot;,
+          &quot;audit_reference&quot;,
+          &quot;residue&quot;
+        ],
+        &quot;stores&quot;: [
+          &quot;development/security-pipeline/research/test-ledger.md&quot;,
+          &quot;.arcanum/observability/signals/sigil-invocations.jsonl&quot;
+        ],
+        &quot;on_missing&quot;: &quot;flag&quot;
+      },
+      {
+        &quot;receipt_id&quot;: &quot;installed-agent-skill-validation-receipt&quot;,
+        &quot;producer&quot;: &quot;task-session&quot;,
+        &quot;required_fields&quot;: [
+          &quot;run_id&quot;,
+          &quot;artifacts&quot;,
+          &quot;validation_result&quot;,
+          &quot;audit_reference&quot;,
+          &quot;residue&quot;
+        ],
+        &quot;stores&quot;: [
+          &quot;development/security-pipeline/research/installed-agent-skill-validation.md&quot;,
+          &quot;.arcanum/observability/signals/sigil-invocations.jsonl&quot;
+        ],
+        &quot;on_missing&quot;: &quot;block&quot;
+      },
+      {
+        &quot;receipt_id&quot;: &quot;malicious-skill-agent-audit-receipt&quot;,
+        &quot;producer&quot;: &quot;task-session&quot;,
+        &quot;required_fields&quot;: [
+          &quot;run_id&quot;,
+          &quot;artifacts&quot;,
+          &quot;validation_result&quot;,
+          &quot;approval_record&quot;,
+          &quot;audit_reference&quot;,
+          &quot;residue&quot;
+        ],
+        &quot;stores&quot;: [
+          &quot;development/security-pipeline/research/malicious-skill-agent-audit.md&quot;,
+          &quot;.arcanum/observability/signals/sigil-invocations.jsonl&quot;
+        ],
+        &quot;on_missing&quot;: &quot;block&quot;
+      }
+    ],
+    &quot;state_namespaces&quot;: [
+      {
+        &quot;namespace&quot;: &quot;repo-source&quot;,
+        &quot;owner&quot;: &quot;git/worktree&quot;,
+        &quot;write_policy&quot;: &quot;Task Session may write only approved artifacts and tests in the active branch.&quot;
+      },
+      {
+        &quot;namespace&quot;: &quot;user-runtime-state&quot;,
+        &quot;owner&quot;: &quot;operator&quot;,
+        &quot;write_policy&quot;: &quot;Research and red-team tests must not mutate real user app state without explicit approval.&quot;
+      },
+      {
+        &quot;namespace&quot;: &quot;external-systems&quot;,
+        &quot;owner&quot;: &quot;third-party providers&quot;,
+        &quot;write_policy&quot;: &quot;No active probing or paid API calls without explicit scoped approval.&quot;
+      }
+    ],
+    &quot;promotion_splits&quot;: [
+      {
+        &quot;source&quot;: &quot;execution evidence&quot;,
+        &quot;target&quot;: &quot;security pipeline registry&quot;,
+        &quot;rule&quot;: &quot;requires task-session validation and operator review before promotion to block policy&quot;,
+        &quot;on_violation&quot;: &quot;block&quot;
+      },
+      {
+        &quot;source&quot;: &quot;research evidence&quot;,
+        &quot;target&quot;: &quot;skill or canonical knowledge&quot;,
+        &quot;rule&quot;: &quot;requires owning capability review before canonical promotion&quot;,
+        &quot;on_violation&quot;: &quot;block&quot;
+      }
+    ]
+  },
+  &quot;steps&quot;: [
+    {
+      &quot;step_id&quot;: &quot;recover-existing-context&quot;,
+      &quot;name&quot;: &quot;Recover existing security agent and pipeline evidence&quot;,
+      &quot;capability_ref&quot;: &quot;context-builder&quot;,
+      &quot;pattern&quot;: &quot;route&quot;,
+      &quot;parallel&quot;: false,
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;intent&quot;,
+          &quot;ref&quot;: &quot;intent.raw&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/SECURITY-PIPELINE-DESIGN.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;security-reviewer-first-run-report&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;threat-model-profiler-run-bahFJMEQTAk5&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;resonantos-security-context-frame&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;threat-model-profiler-run-bahFJMEQTAk5&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;stop_conditions&quot;: [
+        &quot;Block if the first-run report and current pipeline artifacts cannot be recovered.&quot;,
+        &quot;Flag if repository status has changed enough that source paths need fresh scanning.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;architecture-surface-map&quot;,
+      &quot;name&quot;: &quot;Map security architecture, assets, trust boundaries, and attack surfaces&quot;,
+      &quot;capability_ref&quot;: &quot;x-ray&quot;,
+      &quot;pattern&quot;: &quot;xray&quot;,
+      &quot;parallel&quot;: false,
+      &quot;techniques&quot;: [
+        {
+          &quot;id&quot;: &quot;dag_surface_fanout&quot;,
+          &quot;source&quot;: &quot;local-extension&quot;,
+          &quot;validation_note&quot;: &quot;This step produces the surface graph that controls downstream fanout.&quot;
+        }
+      ],
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;resonantos-security-context-frame&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-architecture.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;handle&quot;,
+          &quot;ref&quot;: &quot;security-surface-graph&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Every mapped surface names assets, boundary, current controls, likely vectors, and evidence paths.&quot;,
+        &quot;Architecture distinguishes local desktop risk from internet-facing web risk.&quot;,
+        &quot;Tauri IPC and webview-to-core trust boundary are explicitly modeled.&quot;,
+        &quot;Browser-first bridge, side-panel extension, Electron IPC, local listeners, memory service host override, terminal shell, native library loading, and release artifact trust are explicitly modeled.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Block downstream red-team design if high-risk surfaces lack trust boundary descriptions.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;threat-model-vector-catalog&quot;,
+      &quot;name&quot;: &quot;Create threat model and vector catalog&quot;,
+      &quot;capability_ref&quot;: &quot;residuality-spec&quot;,
+      &quot;pattern&quot;: &quot;sequential&quot;,
+      &quot;parallel&quot;: false,
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;handle&quot;,
+          &quot;ref&quot;: &quot;security-surface-graph&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-architecture.md&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/threat-vector-catalog.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;surface-vector-priority-frame&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Each vector includes preconditions, abuse path, current control, testability, and severity rationale.&quot;,
+        &quot;Each vector is tagged safe-test, approval-required-test, or blocked-test.&quot;,
+        &quot;Profiler observations for CSP null, unsigned capability JSON, bridge route auth tiers, full env forwarding, hardcoded LAN endpoint, unsigned artifacts, no rate limiting, and missing SECURITY.md are represented as vectors or governance gaps.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Block active-test planning for any vector missing approval classification.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;agentic-attack-intelligence&quot;,
+      &quot;name&quot;: &quot;Research agentic attack patterns and developer-extension analogues&quot;,
+      &quot;capability_ref&quot;: &quot;context-builder&quot;,
+      &quot;pattern&quot;: &quot;sequential&quot;,
+      &quot;parallel&quot;: false,
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;surface-vector-priority-frame&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;external_context&quot;,
+          &quot;ref&quot;: &quot;OWASP Agentic Skills Top 10, OWASP Agentic AI threats, OWASP AI Agent Security Cheat Sheet, OWASP LLM Top 10, VS Code extension security docs&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/agentic-attack-intelligence.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;agentic-abuse-case-frame&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Research covers prompt injection, goal hijack, tool abuse, excessive agency, data exfiltration, memory poisoning, approval bypass, multi-agent cascading failures, and supply-chain compromise.&quot;,
+        &quot;Research includes developer-extension analogues such as untrusted workspace execution, activation events, publisher trust, and extension runtime behavior.&quot;,
+        &quot;Every abuse case has prevention controls and safe test ideas.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Block any proposal to execute malware-like, self-replicating, credential-stealing, or exfiltration behavior.&quot;,
+        &quot;Flag any source that is not official documentation or a clearly marked external research reference.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;surface-specialist-fanout&quot;,
+      &quot;name&quot;: &quot;Research specialized security skills by surface and vector family&quot;,
+      &quot;capability_ref&quot;: &quot;robot-talks&quot;,
+      &quot;pattern&quot;: &quot;fanout&quot;,
+      &quot;parallel&quot;: true,
+      &quot;roles&quot;: [
+        &quot;A1 tauri-ipc-capability-boundary&quot;,
+        &quot;A2 webview-csp-and-injection&quot;,
+        &quot;A3 subprocess-and-toolchain&quot;,
+        &quot;A4 provider-http-ssrf-and-quota&quot;,
+        &quot;A5 addon-manifest-and-filesystem&quot;,
+        &quot;A6 browser-automation-cdp-and-ffi&quot;,
+        &quot;A7 secrets-data-lifecycle-and-logs&quot;,
+        &quot;A8 supply-chain-release-integrity&quot;,
+        &quot;A9 external-integrations-telegram-paperclip-mcp&quot;,
+        &quot;A10 installed-agent-skills-runtime-validation&quot;,
+        &quot;A11 malicious-skill-agent-behavior-analysis&quot;,
+        &quot;A12 agentic-attack-intelligence&quot;,
+        &quot;A13 browser-first-bridge-extension&quot;,
+        &quot;A14 electron-ipc-boundary&quot;,
+        &quot;A15 local-listener-topology&quot;,
+        &quot;A16 native-loading-terminal-execution&quot;,
+        &quot;A17 disclosure-release-trust&quot;
+      ],
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;surface-vector-priority-frame&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;agentic-abuse-case-frame&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;external_context&quot;,
+          &quot;ref&quot;: &quot;official-security-tool-docs&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;ledger&quot;,
+          &quot;ref&quot;: &quot;surface-specialist-research-ledger&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/skill-family-candidates.md&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;parent_synthesis&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Each role identifies existing tools before proposing custom checks.&quot;,
+        &quot;Each role proposes one safe deterministic test and one approval-required stress test where applicable.&quot;,
+        &quot;Each role defines maturity criteria from level 0 to level 4.&quot;,
+        &quot;The installed-agent-skills role identifies skill install drift, missing support files, command-resolution failures, and frontmatter/schema gaps.&quot;,
+        &quot;The malicious-skill role identifies suspicious scripts, tool calls, secret reads, network egress, persistence, memory mutation, and permission-purpose mismatch.&quot;,
+        &quot;The agentic-attack-intelligence role maps prompt-injection worms, memory poisoning, goal hijack, tool abuse, approval bypass, and extension-supply-chain analogues.&quot;,
+        &quot;Profiler-specific roles cover browser-first bridge route authorization, Electron IPC parity, local listener exposure, native library loading, terminal shell blast radius, unsigned artifacts, and disclosure governance.&quot;
+      ],
+      &quot;evidence_artifact&quot;: &quot;development/security-pipeline/research/skill-family-candidates.md&quot;,
+      &quot;stop_conditions&quot;: [
+        &quot;Block skill design if a role cannot cite repository evidence for its surface.&quot;,
+        &quot;Flag tool recommendations that lack official documentation or maintained source.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;tool-and-skill-synthesis&quot;,
+      &quot;name&quot;: &quot;Synthesize tool choices and skill design architecture&quot;,
+      &quot;capability_ref&quot;: &quot;distill&quot;,
+      &quot;pattern&quot;: &quot;synthesis&quot;,
+      &quot;parallel&quot;: false,
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;ledger&quot;,
+          &quot;ref&quot;: &quot;surface-specialist-research-ledger&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-agent-skill-architecture.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;approved-safe-test-candidate-frame&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;No custom adapter is proposed where a maintained tool already covers the check.&quot;,
+        &quot;Skill boundaries remain one surface/vector family each.&quot;,
+        &quot;Each skill has a pipeline promotion path.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Block if a skill crosses too many unrelated surfaces to validate deterministically.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;installed-agent-skill-validation&quot;,
+      &quot;name&quot;: &quot;Validate installed agent skills and runtime surfaces&quot;,
+      &quot;capability_ref&quot;: &quot;task-session&quot;,
+      &quot;pattern&quot;: &quot;validation&quot;,
+      &quot;parallel&quot;: false,
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-agent-skill-architecture.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;.agents/skills/&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;.codex/skills/&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;.claude/skills/&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;.github/skills/&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;tools/arcanum&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/installed-agent-skill-validation.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;installed-skill-readiness-frame&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;evidence_artifact&quot;: &quot;development/security-pipeline/research/installed-agent-skill-validation.md&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Installed skills are inventoried across .agents, .codex, .claude, and .github/skills surfaces.&quot;,
+        &quot;Every security-agent skill candidate has valid frontmatter, readable SKILL.md, required support files, and explicit tool/permission assumptions.&quot;,
+        &quot;Command resolution smoke tests identify missing runtime files, schema/catalog dependencies, and alias drift.&quot;,
+        &quot;Any missing validator support files or stale generated surfaces are recorded before safe tests are generated.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Block use of any installed skill as a security-control primitive if it is not discoverable, structurally valid, or backed by required support files.&quot;,
+        &quot;Flag generated runtime-surface drift when one install surface has a newer skill snapshot than another.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;malicious-skill-agent-audit&quot;,
+      &quot;name&quot;: &quot;Audit installed skills and agents for malicious behavior&quot;,
+      &quot;capability_ref&quot;: &quot;task-session&quot;,
+      &quot;pattern&quot;: &quot;validation&quot;,
+      &quot;parallel&quot;: false,
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/installed-agent-skill-validation.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/agentic-attack-intelligence.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-agent-skill-architecture.md&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/malicious-skill-agent-audit.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;malicious-skill-risk-frame&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;evidence_artifact&quot;: &quot;development/security-pipeline/research/malicious-skill-agent-audit.md&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Every installed skill, agent, hook, script, generated command, and tool config is checked for suspicious shell, filesystem, network, secret, persistence, and memory-write behavior.&quot;,
+        &quot;Every requested tool or permission is mapped to the skill or agent purpose.&quot;,
+        &quot;Network-capable and secret-accessing patterns are recorded even when not executed.&quot;,
+        &quot;Findings distinguish malicious, suspicious-needs-review, justified, and blocked.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Block use of a skill or agent if it attempts unexplained secret access, exfiltration, persistence, self-replication, destructive writes, or external network calls.&quot;,
+        &quot;Block execution of suspicious scripts during audit; inspect statically unless operator explicitly approves sandboxed dynamic analysis.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;safe-test-generation&quot;,
+      &quot;name&quot;: &quot;Generate safe deterministic tests and fixtures&quot;,
+      &quot;capability_ref&quot;: &quot;task-session&quot;,
+      &quot;pattern&quot;: &quot;validation&quot;,
+      &quot;parallel&quot;: false,
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;frame&quot;,
+          &quot;ref&quot;: &quot;approved-safe-test-candidate-frame&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-agent-skill-architecture.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/installed-agent-skill-validation.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/malicious-skill-agent-audit.md&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/test-ledger.md&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;evidence_artifact&quot;: &quot;development/security-pipeline/research/test-ledger.md&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Generated tests run without external systems or real user state mutation.&quot;,
+        &quot;Each test records surface id, vector id, fixture, expected result, and validation command.&quot;,
+        &quot;Agentic abuse-case tests cover prompt override, tool misuse, privilege escalation, memory poisoning, data exfiltration prevention, approval bypass, recursive tool abuse, and multi-agent chaining boundaries.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Block any test that mutates real secrets, live browser profiles, external APIs, or broad network targets.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;authorized-red-team-simulation&quot;,
+      &quot;name&quot;: &quot;Prepare authorized red-team simulation plan&quot;,
+      &quot;capability_ref&quot;: &quot;experiment-harness&quot;,
+      &quot;pattern&quot;: &quot;toy_game&quot;,
+      &quot;parallel&quot;: false,
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/threat-vector-catalog.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;human_answer&quot;,
+          &quot;ref&quot;: &quot;operator-active-test-approval&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/authorized-red-team-plan.md&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;human_gate&quot;,
+      &quot;evidence_artifact&quot;: &quot;development/security-pipeline/research/authorized-red-team-plan.md&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Plan names target, scope, rollback, tool, test data, expected evidence, and stop condition.&quot;,
+        &quot;Plan separates local fixture simulation from live app or external-system testing.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Block if operator approval is absent.&quot;,
+        &quot;Block if target scope, rollback, or external-system boundary is unclear.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;maturity-scoring-gap-register&quot;,
+      &quot;name&quot;: &quot;Score maturity and create gap register&quot;,
+      &quot;capability_ref&quot;: &quot;implementation-layering&quot;,
+      &quot;pattern&quot;: &quot;synthesis&quot;,
+      &quot;parallel&quot;: false,
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/test-ledger.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/malicious-skill-agent-audit.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/skill-family-candidates.md&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-maturity-matrix.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-gap-register.md&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Every surface has a maturity level from 0 to 4.&quot;,
+        &quot;Every gap has owner candidate, evidence, next test, and pipeline promotion option.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Flag any level 3 or 4 score that lacks test or pipeline evidence.&quot;
+      ]
+    },
+    {
+      &quot;step_id&quot;: &quot;pipeline-promotion-handoff&quot;,
+      &quot;name&quot;: &quot;Prepare handoff into security pipeline implementation&quot;,
+      &quot;capability_ref&quot;: &quot;invoke&quot;,
+      &quot;pattern&quot;: &quot;handoff&quot;,
+      &quot;parallel&quot;: false,
+      &quot;techniques&quot;: [
+        &quot;delegation_boundary&quot;,
+        &quot;execution_receipt_handoff&quot;,
+        &quot;state_namespace_boundary&quot;,
+        &quot;memory_promotion_split&quot;
+      ],
+      &quot;inputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-gap-register.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;artifact&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/security-maturity-matrix.md&quot;
+        }
+      ],
+      &quot;outputs&quot;: [
+        {
+          &quot;kind&quot;: &quot;handoff&quot;,
+          &quot;ref&quot;: &quot;development/security-pipeline/research/SECURITY-AGENT-HANDOFF.md&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;handoff&quot;,
+          &quot;ref&quot;: &quot;$invoke handoff use context builder to prepare development for &lt;finding-or-surface&gt;&quot;
+        }
+      ],
+      &quot;join_policy&quot;: &quot;none&quot;,
+      &quot;evidence_artifact&quot;: &quot;development/security-pipeline/research/SECURITY-AGENT-HANDOFF.md&quot;,
+      &quot;convergence_criteria&quot;: [
+        &quot;Handoff selects one next surface skill and one safe check implementation.&quot;,
+        &quot;Every finding that needs development is converted into an invoke handoff using the exact sentence: $invoke handoff use context builder to prepare development for &lt;finding-or-surface&gt;.&quot;,
+        &quot;The handoff must use context-builder to gather bounded repository evidence, target files, constraints, validation commands, and risk boundaries before implementation.&quot;,
+        &quot;Any registry promotion starts as observe or warn unless deterministic evidence supports block.&quot;
+      ],
+      &quot;stop_conditions&quot;: [
+        &quot;Ask the operator before implementing new source checks or running active simulations.&quot;,
+        &quot;Block direct promotion from research notes to canonical skills without owner review.&quot;
+      ]
+    }
+  ],
+  &quot;gates&quot;: [
+    {
+      &quot;gate_id&quot;: &quot;g1-context-recovered&quot;,
+      &quot;kind&quot;: &quot;validation&quot;,
+      &quot;owner&quot;: &quot;dispatch-spec&quot;,
+      &quot;condition&quot;: &quot;Existing security-reviewer and security-pipeline evidence must be acknowledged before new research claims are made.&quot;,
+      &quot;on_fail&quot;: &quot;block&quot;
+    },
+    {
+      &quot;gate_id&quot;: &quot;g2-architecture-before-attack&quot;,
+      &quot;kind&quot;: &quot;quality&quot;,
+      &quot;owner&quot;: &quot;dispatch-spec&quot;,
+      &quot;condition&quot;: &quot;Threat vectors and red-team skills must derive from the surface graph and architecture artifact.&quot;,
+      &quot;on_fail&quot;: &quot;block&quot;
+    },
+    {
+      &quot;gate_id&quot;: &quot;g3-active-test-approval&quot;,
+      &quot;kind&quot;: &quot;human_approval&quot;,
+      &quot;owner&quot;: &quot;operator&quot;,
+      &quot;condition&quot;: &quot;Active red-team simulation must have explicit approval, scoped target, rollback plan, and evidence receipt.&quot;,
+      &quot;on_fail&quot;: &quot;block&quot;
+    },
+    {
+      &quot;gate_id&quot;: &quot;g4-promotion-guardrail&quot;,
+      &quot;kind&quot;: &quot;promotion_guardrail&quot;,
+      &quot;owner&quot;: &quot;dispatch-spec&quot;,
+      &quot;condition&quot;: &quot;Execution evidence must not promote inventory, skill, spell, or blocking pipeline policy without owner review.&quot;,
+      &quot;on_fail&quot;: &quot;block&quot;
+    }
+  ],
+  &quot;subagent_strategy&quot;: {
+    &quot;status&quot;: &quot;recommended&quot;,
+    &quot;trigger&quot;: &quot;The research covers many cross-layer surfaces with different tools, threat models, and validation criteria.&quot;,
+    &quot;explanation&quot;: &quot;Surface-specialist roles can research independently and return comparable receipts, while the parent route preserves architecture context, authorization gates, and synthesis authority.&quot;,
+    &quot;context&quot;: [
+      &quot;ResonantOS is a Tauri desktop app with Rust IPC, React webview, subprocesses, provider APIs, browser automation, local data stores, external integrations, and supply-chain release surfaces.&quot;,
+      &quot;The first security-reviewer run and current security pipeline artifacts are the starting evidence.&quot;
+    ],
+    &quot;parallelism&quot;: &quot;fanout&quot;,
+    &quot;join_policy&quot;: &quot;parent_synthesis&quot;,
+    &quot;authorization&quot;: &quot;requires_user_permission&quot;,
+    &quot;permission_prompt&quot;: &quot;Approve running the surface-specialist research fanout? This only authorizes research and safe artifact generation, not active exploit testing.&quot;,
+    &quot;roles&quot;: [
+      {
+        &quot;role_id&quot;: &quot;A1-tauri-ipc-capability-boundary&quot;,
+        &quot;purpose&quot;: &quot;Map Tauri commands, capability gates, ungated commands, and IPC payload abuse tests.&quot;,
+        &quot;ownership&quot;: &quot;security-tauri-ipc-boundary&quot;,
+        &quot;owns&quot;: &quot;Tauri IPC and capability boundary research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A2-webview-csp-and-injection&quot;,
+        &quot;purpose&quot;: &quot;Map CSP, DOM sinks, markdown rendering, frontend XSS paths, and webview-to-IPC escalation.&quot;,
+        &quot;ownership&quot;: &quot;security-webview-csp-injection&quot;,
+        &quot;owns&quot;: &quot;Webview CSP and injection research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A3-subprocess-and-toolchain&quot;,
+        &quot;purpose&quot;: &quot;Map command spawning, environment passing, binary resolution, and script execution risk.&quot;,
+        &quot;ownership&quot;: &quot;security-subprocess-toolchain&quot;,
+        &quot;owns&quot;: &quot;Subprocess and toolchain research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A4-provider-http-ssrf-and-quota&quot;,
+        &quot;purpose&quot;: &quot;Map provider request construction, local subnet discovery, SSRF controls, and quota controls.&quot;,
+        &quot;ownership&quot;: &quot;security-provider-network&quot;,
+        &quot;owns&quot;: &quot;Provider network research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A5-addon-manifest-and-filesystem&quot;,
+        &quot;purpose&quot;: &quot;Map addon manifest validation, filesystem writes, path containment, and traversal tests.&quot;,
+        &quot;ownership&quot;: &quot;security-addon-filesystem&quot;,
+        &quot;owns&quot;: &quot;Addon manifest and filesystem research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A6-browser-automation-cdp-and-ffi&quot;,
+        &quot;purpose&quot;: &quot;Map Chromium/CDP exposure, session lifecycle, native browser FFI, and profile residue.&quot;,
+        &quot;ownership&quot;: &quot;security-browser-automation&quot;,
+        &quot;owns&quot;: &quot;Browser automation and FFI research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A7-secrets-data-lifecycle-and-logs&quot;,
+        &quot;purpose&quot;: &quot;Map plaintext secrets, file permissions, log redaction, retention, and cleanup controls.&quot;,
+        &quot;ownership&quot;: &quot;security-secrets-data-lifecycle&quot;,
+        &quot;owns&quot;: &quot;Secrets and data lifecycle research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A8-supply-chain-release-integrity&quot;,
+        &quot;purpose&quot;: &quot;Map npm, Cargo, GitHub Actions, SBOM, provenance, audit, and release integrity controls.&quot;,
+        &quot;ownership&quot;: &quot;security-supply-chain-release&quot;,
+        &quot;owns&quot;: &quot;Supply chain and release integrity research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A9-external-integrations&quot;,
+        &quot;purpose&quot;: &quot;Map Telegram, Paperclip, provider APIs, and MCP integration token/data flow risks.&quot;,
+        &quot;ownership&quot;: &quot;security-external-integrations&quot;,
+        &quot;owns&quot;: &quot;External integrations research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A10-installed-agent-skills-runtime-validation&quot;,
+        &quot;purpose&quot;: &quot;Map installed skill surfaces, command resolution, frontmatter validity, support-file availability, generated-surface drift, and security-control readiness.&quot;,
+        &quot;ownership&quot;: &quot;security-agent-skill-runtime-validation&quot;,
+        &quot;owns&quot;: &quot;Installed agent skills validation research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;,
+          &quot;installed-agent-skill-validation&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A11-malicious-skill-agent-behavior-analysis&quot;,
+        &quot;purpose&quot;: &quot;Map malicious instructions, unexpected shell or network calls, secret reads, memory writes, persistence, propagation, and permission-purpose mismatch in installed skills and agents.&quot;,
+        &quot;ownership&quot;: &quot;security-agent-skill-malware-analysis&quot;,
+        &quot;owns&quot;: &quot;Malicious skill and agent behavior audit receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;,
+          &quot;malicious-skill-agent-audit&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A12-agentic-attack-intelligence&quot;,
+        &quot;purpose&quot;: &quot;Map current agent-specific attack classes including prompt-injection worms, memory poisoning, goal hijack, tool abuse, approval bypass, and developer-extension supply-chain analogues.&quot;,
+        &quot;ownership&quot;: &quot;security-agentic-attack-intelligence&quot;,
+        &quot;owns&quot;: &quot;Agentic attack intelligence research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;agentic-attack-intelligence&quot;,
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A13-browser-first-bridge-extension&quot;,
+        &quot;purpose&quot;: &quot;Map browser-first bridge routes, bridge token and capability-token coverage, CORS extension-origin assumptions, side-panel extension page-content access, and generated bridge config exposure.&quot;,
+        &quot;ownership&quot;: &quot;security-browser-first-bridge-extension&quot;,
+        &quot;owns&quot;: &quot;Browser-first bridge and extension research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A14-electron-ipc-boundary&quot;,
+        &quot;purpose&quot;: &quot;Map Electron renderer-to-main IPC, command parity with Tauri, contextIsolation and sandbox posture, local Electron servers, and per-command authorization gaps.&quot;,
+        &quot;ownership&quot;: &quot;security-electron-ipc-boundary&quot;,
+        &quot;owns&quot;: &quot;Electron IPC boundary research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A15-local-listener-topology&quot;,
+        &quot;purpose&quot;: &quot;Map local HTTP/WebSocket listeners, loopback assumptions, host override variables, no-TLS posture, rate-limit gaps, and memory-service exposure risk.&quot;,
+        &quot;ownership&quot;: &quot;security-local-listener-topology&quot;,
+        &quot;owns&quot;: &quot;Local listener topology research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A16-native-loading-terminal-execution&quot;,
+        &quot;purpose&quot;: &quot;Map terminal shell execution, PTY blast radius, PATH-dependent command resolution, prompt-in-argv leakage, native library loading, and environment-variable code-loading paths.&quot;,
+        &quot;ownership&quot;: &quot;security-native-loading-terminal&quot;,
+        &quot;owns&quot;: &quot;Native loading and terminal execution research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      },
+      {
+        &quot;role_id&quot;: &quot;A17-disclosure-release-trust&quot;,
+        &quot;purpose&quot;: &quot;Map vulnerability disclosure process, missing SECURITY.md, unsigned artifacts, code-signing and notarization posture, provenance, SBOM, and release trust gaps.&quot;,
+        &quot;ownership&quot;: &quot;security-disclosure-release-trust&quot;,
+        &quot;owns&quot;: &quot;Disclosure and release trust research receipt&quot;,
+        &quot;applies_to_steps&quot;: [
+          &quot;surface-specialist-fanout&quot;
+        ]
+      }
+    ],
+    &quot;receipt_requirements&quot;: [
+      &quot;surface_id&quot;,
+      &quot;repository_evidence_paths&quot;,
+      &quot;tool_candidates&quot;,
+      &quot;safe_tests&quot;,
+      &quot;approval_required_tests&quot;,
+      &quot;maturity_criteria&quot;,
+      &quot;pipeline_promotion_candidate&quot;
+    ]
+  },
+  &quot;technique_overlays&quot;: [
+    {
+      &quot;overlay_id&quot;: &quot;safe-before-active&quot;,
+      &quot;trigger&quot;: &quot;Any step proposes active red-team testing.&quot;,
+      &quot;techniques&quot;: [
+        {
+          &quot;id&quot;: &quot;authorization_sensitive_red_team&quot;,
+          &quot;source&quot;: &quot;local-extension&quot;,
+          &quot;validation_note&quot;: &quot;Active attack simulation requires human approval and scoped evidence.&quot;
+        }
+      ],
+      &quot;applies_to_steps&quot;: [
+        &quot;authorized-red-team-simulation&quot;
+      ],
+      &quot;validation_expectation&quot;: &quot;The dispatch must block active simulation without human_answer input and explicit authorization gate.&quot;
+    },
+    {
+      &quot;overlay_id&quot;: &quot;pipeline-promotion&quot;,
+      &quot;trigger&quot;: &quot;Research proposes a CI check or blocking policy.&quot;,
+      &quot;techniques&quot;: [
+        &quot;memory_promotion_split&quot;,
+        &quot;execution_receipt_handoff&quot;
+      ],
+      &quot;applies_to_steps&quot;: [
+        &quot;pipeline-promotion-handoff&quot;
+      ],
+      &quot;validation_expectation&quot;: &quot;Blocking policy promotion requires deterministic validation evidence and owner review.&quot;
+    }
+  ],
+  &quot;observability&quot;: {
+    &quot;dispatch_id_required&quot;: true,
+    &quot;trace_events&quot;: [
+      &quot;security_agent_research_started&quot;,
+      &quot;surface_graph_created&quot;,
+      &quot;agentic_attack_intelligence_created&quot;,
+      &quot;surface_specialist_fanout_completed&quot;,
+      &quot;installed_skill_validation_completed&quot;,
+      &quot;malicious_skill_agent_audit_completed&quot;,
+      &quot;safe_tests_generated&quot;,
+      &quot;maturity_matrix_created&quot;,
+      &quot;pipeline_handoff_prepared&quot;
+    ],
+    &quot;signal_grouping&quot;: &quot;dispatch_id&quot;
+  },
+  &quot;promotion_guardrails&quot;: [
+    &quot;Execution evidence is not canonical skill, inventory, glossary, sigil, or spell promotion.&quot;,
+    &quot;Research notes cannot promote pipeline checks to block without task-session validation and owner review.&quot;,
+    &quot;Active red-team simulation requires explicit operator approval.&quot;
+  ]
+}</pre>
+      </details>
+    
+      
+      <details class="source-block">
+        <summary>
+          <span>Threat Model Profiler Run</span>
+          <small>Profiler evidence used to extend the strategy</small>
+        </summary>
+        <pre># Threat Model Profiler — ResonantOS vNext
+**Generated:** 2026-06-03  
+**Run ID:** bahFJMEQTAk5  
+**Project root:** `/sandboxed_home-user-dev-projects-resonantos-vnext`
+
+---
+
+## Page 1: Entry / Setup
+No setup commands on this page.
+
+---
+
+## Page 2: Discovery Scan
+
+### Commands run
+
+```
+ls SECURITY.md docs/SECURITY.md docs/security.md 2&gt;/dev/null
+find . -name &#x27;skillsbot_threat-model-profiler_*&#x27; ...
+find . -name &#x27;skillsbot_stack-profiler_*&#x27; ...
+grep -A 20 &#x27;&quot;scripts&quot;|&quot;bin&quot;&#x27; package.json
+cat src-tauri/tauri.conf.json
+grep -rln HTTP route patterns ...
+grep -rn MCP registrations ...
+grep -rn webhook/callback patterns ...
+grep -rn scheduled/queue patterns ...
+grep -rn bind address patterns ...
+find . -name &#x27;.env*&#x27; ...
+grep -rn process.env usage ...
+grep -rn subprocess/child_process patterns ...
+grep -rn file I/O patterns ...
+grep -rn auth patterns ...
+grep -rn DB/outbound patterns ...
+grep -rnE external URLs ...
+cat src-tauri/Cargo.toml
+grep createBridgeToken / randomBytes
+```
+
+### Output summary
+
+**Existing security docs:** None found (`SECURITY.md`, `docs/SECURITY.md`, `docs/security.md` all absent).  
+**Prior threat-model or stack-profile artifacts:** None found.
+
+---
+
+### Project shape
+
+- **Product name:** ResonantOS vNext (`com.resonantos.vnext`)
+- **Architecture:** Tauri v2 desktop application (React/TypeScript frontend + Rust backend) with two alternative deployment modes: `browser-first` (Node.js host) and `electron-host`.
+- **Frontend:** Vite + TypeScript SPA; dev server binds `127.0.0.1:1430`.
+- **Rust backend:** `src-tauri/` — Tauri IPC command surface; bundled SQLite (`rusqlite` with `features = [&quot;bundled&quot;]`); WebSocket client (`tungstenite`); HTTP client (`reqwest`); PTY (`portable-pty`); dynamic library loading (`libloading`).
+- **Browser-first host:** `browser-first/host/run-browser-first.mjs` — a large Node.js orchestrator; spawns Hermes/OpenCode CLIs; runs an HTTP bridge server.
+- **Electron host:** `electron-host/` — alternative deployment; talks to AI APIs directly.
+- **No Docker.** No `Dockerfile`, `compose.yml`, or `docker-compose*` anywhere.
+- **No reverse proxy** (no nginx/Caddy/Traefik config found).
+- **No `.env` files** in tree (no `.env`, `.env.example`, `.env.local`).
+
+---
+
+### Entry point inventory (preliminary)
+
+| Type | Location | Notes |
+|------|----------|-------|
+| Tauri IPC | `src-tauri/src/lib.rs` | ~20+ service modules; see `mod *_service` lines |
+| HTTP bridge server | `browser-first/host/bridge-server.mjs` | Binds `127.0.0.1`, dynamic port; bearer token auth |
+| Dashboard HTTP | `browser-first/host/run-browser-first.mjs:425` | `127.0.0.1:9119` (default) |
+| Vite dev server | `package.json` `&quot;dev&quot;` script | `127.0.0.1:1430` |
+| Electron product | `electron-host/product-main.mjs` | Desktop app shell |
+| Browser side-panel extension | `browser-first/resonantos-side-panel-extension/` | Chrome/Firefox extension injected into browser |
+
+---
+
+### Ports / bind addresses (preliminary)
+
+| Port | Bind | Purpose | Source |
+|------|------|---------|--------|
+| 1430 | 127.0.0.1 | Vite dev server | `package.json:&quot;dev&quot;` |
+| 4888 | 127.0.0.1 | Memory service default | `src/core/runtime.ts:552` |
+| 3100 | 127.0.0.1 | Fallback memory endpoint | `src/core/runtime.ts:857` |
+| 9119 | 127.0.0.1 | Hermes dashboard default | `browser-first/host/run-browser-first.mjs:425` |
+| dynamic | 127.0.0.1 | Bridge server | `bridge-server.mjs:134` |
+| 4000 | 127.0.0.1 | LiteLLM proxy template | `provider-templates.ts:463` |
+| 11434 | 127.0.0.1 | Ollama template | `provider-templates.ts:480` |
+| 1234 | 127.0.0.1 | LM Studio template | `provider-templates.ts:489` |
+| 30004 | 192.168.1.77 | Hardcoded GX10 Qwen endpoint | `src/core/defaults.ts:160` (hardcoded LAN IP) |
+
+---
+
+### Secrets / env vars (preliminary)
+
+| Variable | Role | Source |
+|----------|------|--------|
+| `RESONANTOS_BROWSER_FIRST_BRIDGE_TOKEN` | Bridge server auth token (overrides generated) | `run-browser-first.mjs:5095` |
+| `RESONANTOS_BROWSER_FIRST_PROVIDER_CREDENTIAL_TOKEN` | Capability token: provider credentials | `:5098` |
+| `RESONANTOS_BROWSER_FIRST_PROVIDER_ROUTING_TOKEN` | Capability token: provider routing | `:5101` |
+| `RESONANTOS_BROWSER_FIRST_MEMORY_SETTINGS_TOKEN` | Capability token: memory settings | `:5104` |
+| `RESONANTOS_BROWSER_FIRST_MEMORY_SOURCE_BROWSE_TOKEN` | Capability token: memory browse | `:5107` |
+| `RESONANTOS_BROWSER_FIRST_MEMORY_SOURCE_SCAN_TOKEN` | Capability token: memory scan | `:5110` |
+| `RESONANTOS_BROWSER_FIRST_MEMORY_SOURCE_MANAGE_TOKEN` | Capability token: memory manage | `:5113` |
+| `RESONANTOS_PHANTOM_EXTENSION_DIR` | Override extension dir path | `:127` |
+| `RESONANTOS_BROWSER_FIRST_USER_ROOT` | Override user data root | `:235` |
+| `HERMES_HOME` | Hermes profile home override | `:355` |
+| `HERMES_COMMAND` | Override Hermes CLI binary path | `:370` |
+| `OPENCODE_COMMAND` | Override OpenCode CLI binary path | `:408` |
+| `RESONANTOS_LOCAL_RUNTIME_URL` | Local AI runtime URL override | `:806` |
+| `RESONANTOS_HERMES_TOOLSETS` | Hermes tool selection | `:4031` |
+| `RESONANTOS_HERMES_ADAPTER` | Hermes adapter selection | `:4087` |
+| `RESONANTOS_OPENCODE_ADAPTER` | OpenCode adapter selection | `:4360` |
+| `RESONANTOS_BROWSER_FIRST_PICK_FOLDER_RESULT` | Override folder picker (test) | `:2104` |
+| `LOCALAPPDATA` | Windows app data path | `:112` |
+
+Token generation: `randomBytes(32).toString(&quot;base64url&quot;)` — `bridge-server.mjs:11-13`. Constant-time comparison: `timingSafeEqual` — `:17`.
+
+---
+
+### Subprocess / shell usage (preliminary)
+
+| Pattern | Location | Notes |
+|---------|----------|-------|
+| `spawn` | `run-browser-first.mjs:313` | Hermes CLI process launch |
+| `execFile` | `run-browser-first.mjs:391` | General stdout capture helper |
+| `execFile(&quot;/usr/bin/osascript&quot;)` | `:2109` | macOS folder picker dialog |
+| `execFile(&quot;powershell.exe&quot;)` | `:2117` | Windows folder picker dialog |
+| `execFile(picker, ...)` | `:2134-2135` | Linux folder picker (zenity/kdialog) |
+
+No `shell: true` found in subprocess calls (uses execFile with array args).
+
+---
+
+### External API destinations (preliminary)
+
+Anthropic, OpenAI, Google Gemini, xAI, DeepSeek, MiniMax, Mistral, Cohere, AI21, BigModel (zhipu), NVIDIA, OpenRouter, Together.ai, Groq, Fireworks, Hyperbolic, Aliyun DashScope, `resonantos.com`.
+
+---
+
+### Auth mechanisms (preliminary)
+
+- Bridge server: `X-ResonantOS-Bridge-Token` header (constant-time comparison, `randomBytes(32)`)
+- Capability tokens: `X-ResonantOS-Bridge-Capability-Token` header; per-operation scopes
+- No session cookies, no JWT, no bcrypt/argon2 found
+- CSP: **`null`** in `src-tauri/tauri.conf.json` — CSP is disabled for the Tauri webview
+
+---
+
+### Persistent state (preliminary)
+
+- SQLite via `rusqlite` (bundled) — Rust backend
+- User data root: `~/ResonantOS_User` (or `RESONANTOS_BROWSER_FIRST_USER_ROOT`)
+- JSON files written with `mode: 0o600` for sensitive data (accounts, preferences, state)
+- Memory service at `http://127.0.0.1:4888` (Living Archive)
+
+---
+
+### Observations (discovery)
+
+1. **CSP disabled (`&quot;csp&quot;: null`)** — Tauri webview runs with no Content Security Policy. Relevant if any XSS surface exists in the frontend.
+2. **Hardcoded LAN IP** `192.168.1.77:30004` appears in `src/core/defaults.ts` and `src/core/runtime.ts` — developer machine endpoint in production code.
+3. **No `.env.example` or secrets documentation** — no canonical list of required secrets.
+4. **No SECURITY.md** — no published disclosure or contact process.
+5. **Tauri `unstable` feature** enabled — `tauri = { version = &quot;2&quot;, features = [&quot;unstable&quot;] }`.
+
+
+---
+
+## Page 3: Entry Points
+
+### Commands run
+
+```
+grep -n &#x27;#[tauri::command]&#x27; src-tauri/src/lib.rs | wc -l    → 128
+sed -n &#x27;1451,1650p&#x27; src-tauri/src/lib.rs                    → invoke_handler list
+sed -n &#x27;200-230p&#x27; src-tauri/src/compute_service.rs          → resolve_safe_program
+sed -n &#x27;1005,1060p&#x27; src-tauri/src/lib.rs                    → terminal_run_command
+sed -n &#x27;184-280p&#x27; src-tauri/src/host_state.rs               → assert_addon_capabilities
+sed -n &#x27;4922,5095p&#x27; browser-first/host/run-browser-first.mjs → bridgeRoutes
+sed -n &#x27;85,140p&#x27; browser-first/host/bridge-server.mjs       → request dispatch
+grep ipcMain product-main.mjs                               → Electron IPC handlers
+```
+
+---
+
+### A. Tauri IPC Commands (128 commands total)
+
+**Surface:** Tauri webview frontend → Rust backend via `window.__TAURI_INTERNALS__.invoke`.  
+**Auth model:** Capability-gated — each command calls `assert_addon_capabilities(app, addon_id, &amp;[required_caps])` or `assert_living_archive_host_access(app, &amp;[required_caps])`. The runtime state (addon installation + capability grants) is checked in-process; there is no external auth boundary.  
+**Caller:** Any JavaScript in the Tauri webview. CSP is disabled.
+
+Selected high-impact commands:
+
+| Command | Auth check | Description |
+|---------|-----------|-------------|
+| `terminal_run_command` | `addon.terminal` + `[&quot;shell&quot;]` | Executes an arbitrary terminal command on the host |
+| `terminal_start_pty` / `write_pty` / `stop_pty` | `addon.terminal` + `[&quot;shell&quot;]` | Full PTY session on host |
+| `compute_local_safe_command` | None (no addon check shown in lib.rs wrapper) | Allowlisted command exec; only `uname` with restricted args allowed |
+| `compute_remote_probe` | None visible | Probes remote targets (allowlisted) |
+| `save_provider_secret` | None visible | Writes API key/credential to local secrets file |
+| `browser_host_command` / `browser_visible_host_command` | `addon.browser` + `[&quot;network&quot;,&quot;browser-control&quot;]` | Execute browser host commands |
+| `archive_import_library` | `addon.living-archive` + `[&quot;filesystem&quot;]` | Imports a library from filesystem path |
+| `archive_request_ingest` | `addon.living-archive` + `[&quot;filesystem&quot;,&quot;archive-intake-write&quot;]` | Queues doc for ingest |
+| `opencode_inject_prompt` | `addon.opencode` + `[&quot;filesystem&quot;,&quot;shell&quot;]` | Injects a prompt into OpenCode session |
+| `hermes_chat` | `addon.hermes` + `[&quot;shell&quot;]` | Runs a Hermes chat completion |
+| `obsidian_write_note` / `create_note` / `move_note` | `addon.obsidian` + `[&quot;filesystem&quot;]` | Filesystem write to Obsidian vault |
+| `delegation_execute_opencode_task` | `addon.opencode` + `[&quot;filesystem&quot;,&quot;shell&quot;]` | Delegates a task to OpenCode CLI |
+
+**Note on `compute_local_safe_command`:** The `resolve_safe_program` allowlist permits only `uname` with `-s`, `-m`, `-r` args. Path-traversal rejected. `env_clear()` is called before exec. Allowlist is currently minimal.
+
+---
+
+### B. Bridge Server HTTP Routes (browser-first mode)
+
+**Surface:** Chrome extension side-panel → HTTP server on `127.0.0.1:{dynamic_port}`.  
+**Auth model (layered):**
+1. All routes: must pass `X-ResonantOS-Bridge-Token` header (constant-time compare, `randomBytes(32)`)
+2. Capability-gated routes: must also pass `X-ResonantOS-Bridge-Capability-Token` header
+
+**Routes requiring only the bridge token (no capability token):**
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/status` | System status — public within bridge |
+| GET | `/providers/status` | All provider statuses |
+| POST | `/providers/health` | Health check |
+| POST | `/providers/connectivity-test` | Connectivity test |
+| GET | `/providers/diagnostics-history` | Diagnostics log |
+| GET | `/providers/routing-strategies` | Routing config read |
+| POST | `/augmentor/chat` | Full chat completion — sends to AI providers |
+| POST | `/augmentor/inline` | Inline assistant |
+| POST | `/augmentor/control-plan` | Control plan generation |
+| POST | `/augmentor/next-action` | Next action inference |
+| GET | `/memory/status` | Memory status |
+| GET | `/memory/settings` | Memory settings read |
+| POST | `/memory/search` | Memory semantic search |
+| GET | `/memory/wiki/health` | Wiki health |
+| POST | `/memory/source/versions` | Source version listing |
+| POST | `/archive/intake` | Archive intake write |
+| POST | `/archive/intake/list` / `/read` | Archive intake read |
+| POST | `/archive/review/*` (multiple) | Review request, list, transition, draft, artifact ops |
+| GET | `/addons/status` / `/execution-settings` | Addon status read |
+| GET | `/opencode/status` | OpenCode status |
+| GET | `/browser/downloads` / `/launch-diagnostics` | Browser info |
+| POST | `/hermes/*` (start/stop/delegation) | Hermes orchestration |
+| POST | `/opencode/delegation/*` | OpenCode delegation |
+| POST | `/web/news` | External news search |
+| POST | `/addons/draft*` / `/delegate*` / `/goals` | Addon/delegation management |
+
+**Routes also requiring capability tokens:**
+
+| Method | Path | Required Capability |
+|--------|------|-------------------|
+| POST | `/providers/credentials` | `provider-credential-write` |
+| POST | `/providers/accounts` | `provider-credential-write` |
+| POST | `/providers/routing-strategies` | `provider-routing-write` |
+| POST | `/providers/model-preferences` | `provider-routing-write` |
+| POST | `/memory/settings` | `memory-settings-write` |
+| POST | `/memory/source/browse` | `memory-source-browse` |
+| POST | `/memory/source/scan` | `memory-source-scan` |
+| POST | `/memory/source/action` | `memory-source-manage` |
+| POST | `/memory/source/move-*` | `memory-source-move` |
+| POST | `/memory/source/review` | `memory-source-review` |
+| POST | `/memory/source/intake` / `/file-intake` | `memory-source-intake` / `memory-source-file-intake` |
+| POST | `/memory/wiki/lint` | `memory-source-review` |
+| POST | `/memory/source/diff` | `memory-source-review` |
+| POST | `/addons/execution-settings` | `addon-execution-settings-write` |
+| POST | `/browser/downloads/action` | `browser-download-action` |
+| POST | `/diagnostics/report` | `diagnostics-report-export` |
+
+---
+
+### C. Electron IPC (electron-host mode)
+
+**Surface:** Electron renderer → main process via `ipcMain.handle(&quot;resonantos:invoke&quot;, handleInvoke)`.  
+**Auth model:** None beyond Electron&#x27;s contextIsolation (renderer runs in sandboxed context). The handler dispatches the same command names as the Tauri surface.  
+**Location:** `electron-host/product-main.mjs:765` (`handleInvoke`), `electron-host/product-main.mjs:920` (IPC registration).
+
+---
+
+### D. Browser Side-Panel Extension
+
+**Surface:** Chrome/Firefox extension injected into pages; communicates with bridge server.  
+**Files:** `browser-first/resonantos-side-panel-extension/src/lib/bridge-client.js`  
+**Input:** User actions in the browser side panel; page content read from the active tab.
+
+---
+
+### E. CLI / Scripts (package.json scripts)
+
+No exported binary commands (`bin`). All entry via `node` or `npm run`:
+
+| Script | What it does |
+|--------|-------------|
+| `browser-first:dev` | Launches browser-first host process |
+| `memory-service` | Starts Living Archive memory service (HTTP) |
+| `health` | Health check runner |
+| `electron:dev` | Launches Electron product |
+
+---
+
+### No webhooks, no scheduled jobs, no queue consumers found.
+
+---
+
+### Observations (entry-points)
+
+6. **128 Tauri IPC commands** — large command surface. Each command that grants `shell` capability is effectively a code execution path from the webview.
+7. **CSP is `null`** for the Tauri webview — any XSS in the React frontend would have direct access to all Tauri IPC commands.
+8. **`terminal_run_command` / PTY commands** are gated only by addon capability grants that are stored in writable runtime state (JSON on disk); the state is not signed.
+9. **`/augmentor/chat`, `/augmentor/control-plan`, `/augmentor/next-action`** require only the bridge token (no capability token) — sending arbitrary AI prompts to configured providers.
+10. **Electron IPC handler** (`resonantos:invoke`) has no per-command auth beyond Electron&#x27;s context isolation; it mirrors the Tauri command surface.
+
+
+---
+
+## Page 4: Ports &amp; Network Topology
+
+### Commands run
+
+```
+grep -rn &#x27;listen(\|server\.listen&#x27; --include=&#x27;*.mjs&#x27; ...
+grep -rn &#x27;0\.0\.0\.0&#x27; ...
+grep -n &#x27;config.host|RESONANTOS_MEMORY_SERVICE_HOST&#x27; living-archive-memory-service.mjs
+sed -n &#x27;720,760p&#x27; src-tauri/src/browser_service.rs
+grep -n &#x27;allocate_loopback_port&#x27; browser_service.rs
+grep -rn &#x27;WebSocket|tungstenite|cdp&#x27; src-tauri/src/browser_service.rs
+```
+
+---
+
+### Listener inventory
+
+| Service | Bind address | Port | Protocol | Notes |
+|---------|-------------|------|----------|-------|
+| Vite dev server | 127.0.0.1 | 1430 (fixed) | HTTP | Dev only; `--strictPort` |
+| Bridge server | 127.0.0.1 | dynamic (OS-assigned) | HTTP | browser-first mode; `bridge-server.mjs:134` |
+| Living Archive memory service | 127.0.0.1 (default) | 4888 (default) | HTTP | `living-archive-memory-service.mjs:154`; overridable via `RESONANTOS_MEMORY_SERVICE_HOST` and `RESONANTOS_MEMORY_SERVICE_PORT` |
+| Hermes dashboard | 127.0.0.1 | 9119 (default) | HTTP | `run-browser-first.mjs:425`; hard-coded loopback enforcement |
+| Electron static server | 127.0.0.1 | dynamic | HTTP | Serves built app assets; `product-main.mjs:79` |
+| Electron provider server | 127.0.0.1 | dynamic | HTTP | `product-main.mjs:130` |
+| Electron wallet browser host | 127.0.0.1 | dynamic | HTTP | `wallet-browser-host.mjs:92` |
+| Electron main.mjs server | 127.0.0.1 | dynamic | HTTP | `main.mjs:105` |
+| Chromium CDP (headless browser) | 127.0.0.1 | dynamic (OS-assigned) | WebSocket/HTTP (CDP) | `browser_service.rs:727`; `--remote-debugging-address=127.0.0.1`; used for browser automation |
+| Reference memory service (example) | 127.0.0.1 | dynamic | HTTP | `examples/reference-memory-service.mjs:231` |
+
+**No service binds `0.0.0.0`** in any of the code paths examined.
+
+---
+
+### Docker: No Docker in this project
+
+No `Dockerfile`, `compose.yml`, or `docker-compose*` found. No `ports:` or `expose:` to analyze.
+
+---
+
+### Reverse proxy: None
+
+No nginx, Caddy, or Traefik config found. All HTTP servers are direct-bind on loopback.
+
+---
+
+### TLS
+
+No TLS termination in any server path. All listeners are plain HTTP on `127.0.0.1`. Communication between components is unencrypted but confined to loopback.
+
+---
+
+### `RESONANTOS_MEMORY_SERVICE_HOST` override
+
+`living-archive-memory-service.mjs:14`:
+```js
+let host = env.RESONANTOS_MEMORY_SERVICE_HOST ?? &quot;127.0.0.1&quot;;
+```
+An operator can override the bind host to `0.0.0.0` via environment variable. No validation prevents this. If set to `0.0.0.0`, the memory service becomes LAN-reachable with no TLS and no auth beyond the memory service&#x27;s own logic.
+
+---
+
+### Chromium headless CDP port
+
+`browser_service.rs:761-762`: CDP debug port allocated via `TcpListener::bind(&quot;127.0.0.1&quot;, 0)` — OS assigns an ephemeral loopback port. Chromium launched with `--remote-debugging-address=127.0.0.1` (loopback only). No LAN exposure.
+
+---
+
+### Observations (ports-network)
+
+11. **`RESONANTOS_MEMORY_SERVICE_HOST`** allows binding the memory service to `0.0.0.0` — no validation in code. If set in a shared or misconfigured environment, the memory service is LAN-exposed with no auth.
+12. **All listeners use loopback by default** — no service intentionally binds to all interfaces in the default configuration.
+13. **No TLS anywhere** — all inter-component communication is plain HTTP on loopback. Acceptable for a desktop app; notable if any component is ever moved to a network-accessible host.
+14. **Hermes dashboard loopback enforcement** explicitly rejects non-localhost bind via a throw (`run-browser-first.mjs:427-428`), which is a defence-in-depth check.
+
+
+---
+
+## Page 5: Secrets Inventory
+
+### Commands run
+
+```
+sed -n &#x27;288,380p&#x27; src-tauri/src/host_state.rs          → provider secrets R/W
+sed -n &#x27;380,400p&#x27; src-tauri/src/host_state.rs          → resolve_provider_secret
+sed -n &#x27;20,60p&#x27; electron-host/product-main.mjs         → PROVIDER_IDS_WITH_ENV_FALLBACK
+sed -n &#x27;65,90p&#x27; browser-first/host/bridge-server.mjs   → writeBridgeConfig
+sed -n &#x27;4030,4050p&#x27; run-browser-first.mjs              → process.env spread to subprocess
+sed -n &#x27;125,170p&#x27; src/core/compute-fabric.ts           → SECRET_KEY_PATTERN redaction
+grep -n telegram_service.rs                            → Telegram bot token storage
+cat .gitignore                                         → gitignore coverage
+cat .mcp.json                                          → mcp config (gitignored)
+```
+
+---
+
+### Secret inventory
+
+#### 1. AI provider API keys
+
+| Role | Secret ID / key | Storage location | File perms | Gitignored | Used by |
+|------|----------------|-----------------|-----------|-----------|---------|
+| All AI provider keys | `&lt;provider_id&gt;` (arbitrary) | `~/ResonantOS_User/Secrets/provider-secrets.json` | `fs::write` — no explicit chmod (inherits umask) | N/A (user data, not repo) | Tauri backend → outbound HTTP to AI APIs |
+| Legacy provider keys | same | `&lt;tauri_app_state_dir&gt;/provider-secrets.json` | same | N/A | Migrated to portable on next startup |
+| MiniMax API key env fallback | `MINIMAX_API_KEY` | Host environment variable | — | — | Rust: `env::var(&quot;MINIMAX_API_KEY&quot;)` |
+| OpenAI API key env fallback | `OPENAI_API_KEY` | Host environment variable | — | — | Rust: `env::var(&quot;OPENAI_API_KEY&quot;)`; Electron: `PROVIDER_IDS_WITH_ENV_FALLBACK` |
+
+**Storage note:** `write_provider_secrets` calls `fs::write(path, payload)` with no explicit `set_permissions` call. File permissions depend on OS umask (typically `0644` on Linux). JavaScript equivalents use explicit `mode: 0o600`.
+
+#### 2. Bridge token and capability tokens
+
+| Role | Storage location | File perms | Gitignored |
+|------|----------------|-----------|-----------|
+| Bridge token | Generated in memory (`randomBytes(32)`); written to `&lt;extensionRoot&gt;/src/bridge-config.generated.js` | `mode: 0o600` | Yes — `.gitignore` explicitly lists `bridge-config.generated.js` |
+| Capability tokens (per-scope) | Same file (`bridge-config.generated.js`) | `mode: 0o600` | Yes |
+
+**Transit:** Bridge token appears in the `globalThis.__RESONANTOS_BRIDGE_CONFIG__` JavaScript object loaded by the browser extension; sent as `X-ResonantOS-Bridge-Token` header on every request.
+
+#### 3. Telegram bot token
+
+- **Storage:** `~/ResonantOS_User/Secrets/provider-secrets.json` under key `addon.telegram-channel.bot-token`
+- **Source:** `telegram_service.rs:132` → calls `write_provider_secrets`
+- **Used by:** Telegram polling loop in `telegram_service.rs`
+
+#### 4. Hermes / OpenCode CLI tokens
+
+- Hermes receives `HERMES_HOME` env var pointing to its profile dir; its own credential storage is opaque to this codebase.
+- Subprocess is launched with `env: { ...process.env, HERMES_HOME: profileHome }` — **full host environment is forwarded** to Hermes/OpenCode subprocesses (`run-browser-first.mjs:4037, 4653, 4673, 5754`).
+
+---
+
+### Transit paths
+
+| Secret | Transit path |
+|--------|-------------|
+| AI provider API keys | Disk (JSON) → Rust in-memory → `Authorization: Bearer` header → HTTPS to AI provider APIs |
+| MiniMax/OpenAI env fallback | OS environment → Rust `env::var` → `Authorization: Bearer` header |
+| Bridge token | Memory → `bridge-config.generated.js` (mode 0o600) → Chrome extension JS → HTTP header |
+| Telegram bot token | Tauri IPC (frontend → Rust) → Disk (JSON) → Rust in-memory → Telegram API HTTPS |
+| Host env (all vars) | Host process env → subprocess env via `...process.env` spread when launching Hermes/OpenCode |
+
+---
+
+### Leak patterns found
+
+| Pattern | Location | Notes |
+|---------|----------|-------|
+| `...process.env` spread to subprocess | `run-browser-first.mjs:4037, 4653, 4673, 5754` | All host env vars (including any ambient API keys) forwarded to Hermes and OpenCode CLIs |
+| Bridge token in stdout | `run-browser-first.mjs:5748` | `console.log(JSON.stringify({... bridgeUrl, bridgeConfigPath, ...}))` — bridge URL (not token value) is logged; token itself not printed |
+| `provider-secrets.json` no explicit chmod (Rust) | `host_state.rs:355` | `fs::write` with no `set_permissions` — inherits process umask |
+
+---
+
+### Redaction patterns (in-codebase)
+
+- `compute-fabric.ts:128`: `SECRET_KEY_PATTERN` and `SECRET_VALUE_PATTERN` regex — used to detect secrets in compute job payloads (static analysis of job parameters, not output redaction)
+- `run-browser-first.mjs:347-348`: Log sanitizer replaces `bearer &lt;token&gt;` → `Bearer [redacted-token]` and `api_key=...` → `api_key=[redacted]` in logged strings
+- `settings-common.js:54-55`: Same pattern in extension settings logs
+- `scripts/health-check.mjs:160`: `&quot;api_key&quot;` in a blocklist for health output
+
+---
+
+### `.gitignore` coverage for secrets
+
+- `.env` and `.env.*` — gitignored
+- `*.key`, `*.pem`, `*.p12`, `*.mobileprovision`, `*.keystore` — gitignored
+- `bridge-config.generated.js` — gitignored
+- `provider-secrets.json` — lives in `~/ResonantOS_User/Secrets/`, outside repo
+
+No `.env.example` file found — no canonical list of expected secrets.
+
+---
+
+### Rotation model
+
+- **AI provider keys:** No rotation procedure documented. Manual re-entry via settings UI. No rotation scripts.
+- **Bridge token:** Regenerated each time the bridge server starts (`randomBytes(32)`). Per-session ephemeral.
+- **Telegram bot token:** No rotation procedure documented.
+- No key rotation scripts found anywhere.
+
+---
+
+### Observations (secrets)
+
+15. **`provider-secrets.json` written without explicit file permissions** in Rust — `fs::write` uses OS umask; on a typical Linux system this yields `0644` (world-readable). JavaScript file writes use explicit `mode: 0o600`.
+16. **Full host environment (`...process.env`) forwarded to Hermes and OpenCode subprocesses** — any ambient API keys, tokens, or credentials in the host environment are accessible to those CLIs.
+17. **No `.env.example`** — no canonical list of expected secrets; onboarding surface.
+18. **Only two providers have env var fallback** (`MINIMAX_API_KEY`, `OPENAI_API_KEY`) — others require explicit UI entry; asymmetric handling.
+19. **Bridge token value written to disk** at `bridge-config.generated.js` (mode 0o600, gitignored) — file persists between server restarts until overwritten; old token file may exist if process was killed before restart.
+
+
+---
+
+## Page 6: Trust Boundaries
+
+### Commands run
+
+```
+grep -n &#x27;cors|CORS|Access-Control|extensionOrigin&#x27; bridge-server.mjs
+grep -n &#x27;extensionOrigin|resonantExtensionId&#x27; run-browser-first.mjs
+grep -rn &#x27;rusqlite|params!&#x27; src-tauri/src/
+grep -n &#x27;contextIsolation|nodeIntegration|sandbox&#x27; electron-host/product-main.mjs
+cat .github/workflows/alpha-build.yml
+grep -n &#x27;secrets\.&#x27; .github/workflows/alpha-build.yml
+```
+
+---
+
+### Trust boundary diagram
+
+```
+[User / local OS]
+  │
+  ├── Tauri mode ─────────────────────────────────────────────────────
+  │     │
+  │     ▼
+  │   [Tauri webview (React SPA)]  ← CSP: null (disabled)
+  │     │   window.__TAURI_INTERNALS__.invoke(command, args)
+  │     ▼
+  │   [Rust backend / Tauri IPC] ─── addon capability gating (from writable JSON state)
+  │     │
+  │     ├─HTTP/HTTPS──▶ [AI provider APIs] (Anthropic, OpenAI, Groq, etc.)
+  │     ├─WebSocket──▶  [Chromium CDP / headless browser] (127.0.0.1:ephemeral)
+  │     ├─SQL──────────▶ [SQLite DB] (parameterized via rusqlite params![])
+  │     └─spawn──────▶  [Hermes / OpenCode CLI] (inherits full host env)
+  │
+  ├── Browser-first mode ──────────────────────────────────────────────
+  │     │
+  │     ▼
+  │   [Chrome extension side-panel] ─── CORS: origin locked to chrome-extension://cdpdmmalhmokbfcfgogoepnjplaakgnl
+  │     │   X-ResonantOS-Bridge-Token + optional X-ResonantOS-Bridge-Capability-Token
+  │     ▼
+  │   [Bridge server HTTP] (127.0.0.1:dynamic)
+  │     │
+  │     ├─spawn──────▶  [Hermes CLI] (full host env forwarded)
+  │     ├─spawn──────▶  [OpenCode CLI] (full host env forwarded)
+  │     └─HTTP──────▶   [Memory service] (127.0.0.1:4888)
+  │
+  └── Electron mode ──────────────────────────────────────────────────
+        │
+        ▼
+      [Electron renderer] (contextIsolation:true, nodeIntegration:false, sandbox:false for main+chat windows)
+        │   ipcMain.handle(&quot;resonantos:invoke&quot;, handleInvoke)
+        ▼
+      [Electron main process] ─── env fallback for MINIMAX_API_KEY, OPENAI_API_KEY
+        │
+        └─HTTP──────▶  [AI provider APIs]
+
+[GitHub Actions CI] ─── push to main/dev → build artifacts → upload only (no deploy/signing visible)
+```
+
+---
+
+### Boundary detail
+
+#### B1: User / web content → Tauri webview (Tauri mode)
+
+- **Transport:** In-process webview render
+- **Validation:** Tauri&#x27;s built-in IPC serialization; CSP is **`null`** (disabled)
+- **What crosses:** User-generated content, AI responses, filesystem paths, command names
+- **Notes:** CSP=null means any XSS in the React frontend or in AI-generated HTML/markdown rendered inline would have unrestricted access to Tauri IPC commands. No `script-src` restriction.
+
+#### B2: Tauri webview → Rust IPC commands
+
+- **Transport:** Tauri `invoke()` (in-process, serialized JSON)
+- **Validation:** `assert_addon_capabilities` / `assert_living_archive_host_access` — checks addon installation + capability grants stored in `runtime-state.json`
+- **What crosses:** Command names, structured JSON payloads
+- **Notes:** The capability grants are stored in a JSON file written by the Tauri app itself. No cryptographic signing; an attacker who can write to the state file can grant themselves any capability.
+
+#### B3: Chrome extension → Bridge server (browser-first mode)
+
+- **Transport:** HTTP to `127.0.0.1:{dynamic}`
+- **Validation:** `X-ResonantOS-Bridge-Token` (constant-time, `randomBytes(32)`); `Access-Control-Allow-Origin` locked to `chrome-extension://cdpdmmalhmokbfcfgogoepnjplaakgnl`
+- **What crosses:** AI chat prompts, memory read/write, provider credentials (write gated by capability token), file browse paths
+- **Notes:** CORS restricts cross-origin reads to the specific extension origin. The bridge token provides a second factor. Other processes on the host can access 127.0.0.1 directly (CORS is browser-enforced only).
+
+#### B4: Rust backend → SQLite (archive service)
+
+- **Transport:** In-process via `rusqlite` (bundled SQLite)
+- **Validation:** All queries use `params![]` parameterized binding
+- **What crosses:** Archive document data, metadata, search terms
+- **Notes:** No string-concatenated SQL found. Connection opened per-call (`Connection::open(db_path)`).
+
+#### B5: Rust backend → AI provider APIs (outbound)
+
+- **Transport:** HTTPS via `reqwest` (rustls-tls)
+- **Validation:** TLS cert chain (system roots); API key in `Authorization: Bearer` header
+- **What crosses:** User chat messages, context, system prompts, model outputs
+- **Notes:** User message content is sent to external AI providers. No PII scrubbing layer observed before sending.
+
+#### B6: Bridge server → Hermes / OpenCode CLI (subprocess)
+
+- **Transport:** `spawn(command, args, { env: { ...process.env, HERMES_HOME } })`
+- **Validation:** None — full host environment forwarded; child process identity = host user
+- **What crosses:** Full host environment including any ambient API keys; Hermes prompt content
+- **Notes:** Hermes and OpenCode are external CLIs with their own capabilities (filesystem, shell, network). Trust boundary is the CLI&#x27;s own sandboxing (none observed).
+
+#### B7: Electron renderer → Electron main process
+
+- **Transport:** Electron IPC (`ipcMain.handle(&quot;resonantos:invoke&quot;)`)
+- **Validation:** `contextIsolation: true`, `nodeIntegration: false`; `sandbox: false` for main window and chat window
+- **What crosses:** Same command surface as Tauri IPC
+- **Notes:** `sandbox: false` for main and chat windows means renderer has access to Node.js APIs if `contextIsolation` were bypassed. With `contextIsolation: true` this is not directly exploitable without a renderer RCE; the combination is noted as a posture fact.
+
+#### B8: CI → artifact storage
+
+- **Transport:** GitHub Actions → GitHub artifact storage
+- **Validation:** `GITHUB_TOKEN` (implicit)
+- **What crosses:** Built binaries (macOS .dmg/.app, Windows .msi/.exe, Linux .AppImage/.deb/.rpm)
+- **Notes:** No code signing or notarization observed in the workflow. Artifacts are not signed. Distribution of unsigned binaries may trigger OS Gatekeeper warnings.
+
+---
+
+### Observations (trust-boundaries)
+
+20. **CSP disabled in Tauri webview** — `&quot;csp&quot;: null` in `tauri.conf.json`. XSS in the frontend has direct access to the full Tauri IPC surface (128 commands including shell execution via terminal add-on).
+21. **Capability grants stored in unsigned JSON** — addon capability state (`runtime-state.json`) has no integrity check; local write access to the file bypasses the capability gate.
+22. **CORS limited to specific extension origin** — bridge server sets `Access-Control-Allow-Origin` to the specific extension ID; this is correct browser-enforced isolation.
+23. **`sandbox: false` for Electron main and chat windows** — combined with `contextIsolation: true`; acceptable posture for a desktop app but worth noting.
+24. **No code signing in CI** — built binaries are not signed; macOS Gatekeeper and Windows SmartScreen will warn users.
+25. **Hermes/OpenCode subprocess receives full host environment** — these CLIs run with the same environment as the host process, including any credentials not explicitly scoped.
+
+
+---
+
+## Page 7: Subprocess &amp; Shell Surface
+
+### Commands run
+
+```
+grep -rn &#x27;spawn|execFile&#x27; browser-first/host/ electron-host/ scripts/
+grep -rn &#x27;Command::new&#x27; src-tauri/src/
+sed -n &#x27;111,180p&#x27; src-tauri/src/terminal_service.rs
+sed -n &#x27;3985,4045p&#x27; browser-first/host/run-browser-first.mjs
+sed -n &#x27;996,1030p&#x27; src-tauri/src/obsidian_service.rs
+```
+
+---
+
+### Subprocess inventory
+
+#### Node.js (browser-first host)
+
+| Location | Command | Shell? | User-influenced? | Notes |
+|----------|---------|--------|-----------------|-------|
+| `run-browser-first.mjs:313` | Browser binary (e.g., Chrome, Brave) | No (spawn, array args) | Browser path from config | Detached, stdio:ignore |
+| `run-browser-first.mjs:391` (`execFileStdout`) | General — wraps `execFile` | No | Depends on call site | Array args, no shell |
+| `run-browser-first.mjs:2109` | `/usr/bin/osascript` | No | `prompt` string in args | macOS folder picker; prompt from bridge handler |
+| `run-browser-first.mjs:2117` | `powershell.exe` | No | `prompt` string in args | Windows folder picker; prompt from bridge handler |
+| `run-browser-first.mjs:2134-2135` | `picker` (zenity/kdialog) | No | `--title &lt;prompt&gt;` arg | Linux folder picker; prompt from bridge handler |
+| `run-browser-first.mjs:4034` | Hermes CLI binary | No | `prompt` (constructed from `packet` payload) | Prompt is passed as `-q` arg |
+| `run-browser-first.mjs:4307` | OpenCode CLI binary | No | Prompt from payload | Similar pattern |
+| `run-browser-first.mjs:4651` | Hermes CLI (`dashboard`) | No | Hardcoded `&quot;dashboard&quot;` subcommand | Start |
+| `run-browser-first.mjs:4672` | Hermes CLI (`dashboard --stop`) | No | Hardcoded | Stop |
+| `run-browser-first.mjs:5751` | Host binary (native) | No | `hostArgs` from config | Detached |
+| `run-browser-first.mjs:5765` | `open` (macOS) | No | `hostAppBundle` path | App bundle from config |
+| `run-browser-first.mjs:5776` | `osascript` | No | Hardcoded script | macOS activate |
+| `run-browser-first.mjs` (download) | `open` / `explorer.exe` / `xdg-open` | No | `filePath` (validated against downloads dir) | Path validated before use |
+
+#### Rust (Tauri backend)
+
+| Location | Command | Shell? | User-influenced? | Notes |
+|----------|---------|--------|-----------------|-------|
+| `terminal_service.rs:123` | `cmd /C &lt;command&gt;` (Windows) | **Yes — shell** | `request.command` (full string) | User-supplied command string passed to `cmd /C` |
+| `terminal_service.rs:132` | `sh -lc &lt;command&gt;` (Unix) | **Yes — shell** | `request.command` (full string) | User-supplied command string passed to `sh -lc` |
+| `compute_service.rs:250` | Allowlisted program (`uname`) | No | Args restricted by allowlist | Only `uname -s/-m/-r` permitted |
+| `browser_service.rs:272` | `npx` | No | Hardcoded args | Browser engine install |
+| `browser_service.rs:725` | `chromium_path` | No | Binary path from config | `--remote-debugging-address=127.0.0.1` |
+| `obsidian_service.rs:1014` | `open` / `cmd /C start` / `xdg-open` | No | `url` (constructed from obsidian:// + percent-encoded path) | URL = `obsidian://open?path=&lt;percent_encoded&gt;` |
+| `memory_service.rs:184` | `node` | No | Hardcoded script path | Launches memory service |
+| `opencode_service.rs:156` | OpenCode binary | No | Binary path from config | |
+| `opencode_service.rs:706` | `uv` | No | Hardcoded args | Python env setup |
+| `paperclip_service.rs:156` | Paperclip binary | No | Binary path from config | |
+| `browser_host_service.rs:194` | `node` | No | Hardcoded script | Browser host |
+| `browser_host_service.rs:225` | Electron binary | No | Hardcoded args | |
+
+---
+
+### Key findings
+
+**Shell execution of user-supplied commands:**  
+`terminal_service.rs:123-132` — `run_terminal_command` passes `request.command` (a string from the Tauri IPC payload) directly to `sh -lc &lt;command&gt;` on Unix or `cmd /C &lt;command&gt;` on Windows. This is shell execution of user-controlled content. Access is gated by `addon.terminal` + `[&quot;shell&quot;]` capability.
+
+**Hermes prompt passed as argv arg:**  
+`run-browser-first.mjs:4034` — Hermes prompt is passed as `-q &lt;prompt&gt;` via `execFile` (not `exec` / no shell). The prompt content is included in the Hermes process&#x27;s argv. On systems with `/proc`, the prompt would be readable by other processes on the same host.
+
+**OS folder-picker prompt in argv:**  
+`run-browser-first.mjs:2109, 2117, 2134-2135` — picker dialog title (`prompt`) derived from bridge request payload. Passed as `--title &lt;prompt&gt;` arg. No shell involved; low injection risk via execFile.
+
+**PATH reliance:**  
+Several commands rely on bare names (`node`, `npx`, `opencode`, `uv`, `xdg-open`, `open`, `osascript`) rather than absolute paths. Resolution depends on the host `$PATH`.
+
+---
+
+### Observations (subprocess-shell)
+
+26. **`terminal_service.rs:132` — `sh -lc &lt;user_command&gt;`** — the `terminal_run_command` Tauri IPC passes user-supplied string directly to a login shell. This is the intended behavior (the terminal add-on exists to run shell commands), but the surface is: any JavaScript in the webview that can invoke this command (after capability grant) can execute arbitrary shell commands on the host.
+27. **Hermes delegation prompt appears in process argv** — prompt content (from `packet.mission` + `packet.context`) is passed as the `-q` arg; visible in process listings on Unix.
+28. **PATH-dependent binary resolution** — `node`, `npx`, `opencode`, `hermes`, `uv`, `xdg-open` resolved from `$PATH`; no path pinning.
+
+
+---
+
+## Page 8: File I/O Surface
+
+### Commands run
+
+```
+sed -n &#x27;2103,2180p&#x27; browser-first/host/run-browser-first.mjs      → memory source browse
+sed -n &#x27;940,1010p&#x27; src-tauri/src/archive_service.rs               → resolve_document_path
+grep -n &#x27;mkdtemp|tmp|temp&#x27; run-browser-first.mjs
+grep -n &#x27;assertSafeMoveSource&#x27; browser-first/host/memory-source-move.mjs
+grep -n &#x27;validate_intake_file_name&#x27; src-tauri/src/archive_service.rs
+```
+
+---
+
+### User-specified paths
+
+#### A. Archive document read/write (Rust — Tauri IPC)
+
+| Command | Path source | Sanitization |
+|---------|------------|-------------|
+| `archive_read_document` | `request.path` (from IPC payload) | `resolve_document_path`: `canonicalize()` + `archive_path_is_allowed()` (allowlist of `allowed_roots`) |
+| `archive_write_intake_artifact` | `request.file_name` (bare filename only) | `validate_intake_file_name`: rejects absolute paths and path separators; must be a plain filename |
+| `archive_request_ingest` | `request.source_path` | `resolve_allowed_source_path`: `canonicalize()` + allowlist check |
+| `archive_import_library` | `request.library_path` (full path) | Validated against configured archive roots; `canonicalize()` used |
+| `archive_scan_source_folders` | folder paths from request | Resolved against vault root |
+| `obsidian_read_note` / `write_note` | `request.relative_path` | Joined to vault root; `.resolve()` equivalent via Rust path ops |
+
+**Pattern:** Archive paths consistently use `canonicalize()` + allowlist check against configured roots. No raw path passthrough found.
+
+#### B. Memory source paths (Node.js — bridge server)
+
+| Route | Path source | Sanitization |
+|-------|------------|-------------|
+| `POST /memory/source/browse` | OS native folder picker (user clicks in GUI) | No user-supplied path — path comes from OS dialog |
+| `POST /memory/source/scan` | `payload.path` (bridge request body) | `expandUserPath()` resolves `~`; `existsSync` check; no allowlist boundary |
+| `POST /memory/source/move-preflight` | `payload.path` (bridge request body) | `assertSafeMoveSource`: rejects root, home dir root, memory root, system dirs, shallow paths |
+| `POST /memory/source/move-execute` | From preflight result (session-validated) | Preflight result stored in memory; execute reads from that |
+| `POST /memory/source/intake` | `payload.sourcePath` | `expandUserPath()` resolves; no explicit allowlist |
+| `POST /memory/source/file-intake` | `payload.filePath` | `expandUserPath()` resolves; `stat` check; no explicit root boundary |
+
+**`assertSafeMoveSource` guards (`memory-source-move.mjs:48-69`):**
+- Rejects filesystem roots
+- Rejects `$HOME` directly
+- Rejects paths inside the memory root
+- Rejects paths with ≤2 parts from root
+- Rejects paths that are shallow children of home
+
+**`scan` and `intake` paths:** No root-anchored allowlist; any path that `expandUserPath` resolves to and that exists will be processed.
+
+#### C. Download action path (Node.js)
+
+| Route | Path source | Sanitization |
+|-------|------------|-------------|
+| `POST /browser/downloads/action` | `payload.path` (relative) | `path.relative(downloadsRoot, candidate)` check — must not start with `..` or be absolute |
+
+#### D. Electron temp screenshots
+
+- `product-main.mjs:929-1001`: `path.join(app.getPath(&quot;temp&quot;), &quot;resonantos-electron-shell-${Date.now()}.png&quot;)` — timestamp-based name in OS temp dir. Not cleaned up by the shown code path (screenshot artifacts persist until OS temp cleanup).
+
+---
+
+### Temp file usage
+
+| Location | Pattern | Cleanup |
+|----------|---------|---------|
+| `run-browser-first.mjs:5149` | `mkdtemp(os.tmpdir(), &quot;resonantos-hermes-bridge-&quot;)` — random suffix via `mkdtemp` | Not explicitly cleaned in visible code; test context only |
+| Electron screenshots | `path.join(temp, &quot;resonantos-electron-*-${Date.now()}.png&quot;)` | Not explicitly cleaned |
+
+---
+
+### File uploads
+
+No HTTP multipart upload endpoints found. No `UploadFile`, `multer`, `formidable` patterns found. Ingestion is via local filesystem paths (user selects folder), not file upload.
+
+---
+
+### Log destinations
+
+- **Bridge server errors:** `response.writeHead` with error JSON — returned to client, not logged to file
+- **`console.log` / `console.error`:** Used throughout (stdout/stderr); no log rotation or file log found
+- **Diagnostic text redaction:** `redactDiagnosticText()` in `run-browser-first.mjs:339-347` strips bearer tokens, API keys, secrets from diagnostics output
+- **No structured logging framework** — no Winston, Pino, or similar
+
+---
+
+### Observations (file-io)
+
+29. **Memory source `scan` and `intake` paths have no root-anchored allowlist** — any path the user supplies (via bridge request) that exists on the filesystem can be scanned or ingested. The capability token gates the route, but within that gate, the path is unbounded.
+30. **Archive path validation is thorough** — `canonicalize()` + allowlist check present for all Rust archive path operations.
+31. **`validate_intake_file_name` prevents path separators** — intake filename constrained to plain filename.
+32. **Electron screenshot temp files not cleaned up** — `resonantos-electron-*-${Date.now()}.png` files may accumulate in the OS temp dir.
+33. **No file upload surface** — ingestion is local-path-based, not HTTP multipart upload.
+
+
+---
+
+## Page 9: Container &amp; Sandbox Model
+
+### Commands run
+
+```
+find . -name &#x27;Dockerfile*&#x27; -o -name &#x27;compose*.yml&#x27; -o -name &#x27;docker-compose*&#x27;
+grep -rn &#x27;docker run|docker exec&#x27; --include=&#x27;*.sh&#x27; --include=&#x27;Makefile&#x27; ...
+```
+
+### Output
+
+No Docker files found anywhere in the project tree.
+
+---
+
+### Result: No containers
+
+This project is a native desktop application (Tauri + Electron). There are no:
+- Dockerfiles
+- Compose files
+- `docker run` invocations
+- Container networks or volumes
+- Docker socket mounts
+
+**Tauri&#x27;s AppImage and `.app` bundle** provide OS-level sandboxing at install time (AppImage is not a container; it&#x27;s a portable Linux executable). No additional container isolation layer is present.
+
+**Electron sandbox model** (partial): `sandbox: false` for main and chat windows; `sandbox: true` for the floating chat window (`product-main.mjs:456`). Detailed in trust-boundaries section.
+
+---
+
+### Observations (containers)
+
+No container surface to catalog. This section is intentionally minimal.
+
+
+---
+
+## Page 10: Identity &amp; Auth Surface
+
+### Commands run
+
+```
+grep -rn &#x27;login|signup|password|authenticate&#x27; src/ browser-first/ electron-host/
+grep -rn &#x27;rateLimit|throttle&#x27; --include=&#x27;*.ts&#x27; --include=&#x27;*.mjs&#x27; --include=&#x27;*.rs&#x27;
+sed -n &#x27;824,895p&#x27; src-tauri/src/provider_service.rs    → provider audit log
+grep -n &#x27;opencode_record_trust_event&#x27; opencode_service.rs
+```
+
+---
+
+### Context
+
+ResonantOS vNext is a **single-user desktop application**. There are no user accounts, no login/signup flows, no sessions, and no multi-tenant data. The auth model is fundamentally different from a web app: the &quot;user&quot; is always the local OS user running the app.
+
+---
+
+### Authentication mechanisms in use
+
+#### 1. Tauri IPC (no external auth)
+
+- **Mechanism:** None required beyond OS-level access to the running desktop process.
+- **Who can call:** Any JavaScript executing inside the Tauri webview.
+- **Authorization gate:** Addon capability grants stored in `runtime-state.json`.
+- **No user login required.** Whoever runs the Tauri binary is the operator.
+
+#### 2. Bridge server bearer token (browser-first mode)
+
+- **Mechanism:** Static bearer token per session; `X-ResonantOS-Bridge-Token` header
+- **Library:** Custom (`bridge-server.mjs`); `randomBytes(32)`, `timingSafeEqual`
+- **Where verified:** Every incoming request, before routing
+- **Token lifecycle:** Generated at bridge server startup; written to `bridge-config.generated.js` (mode 0o600); valid for the lifetime of the bridge server process
+- **Revocation:** Process termination (token is in-memory + file; restarting generates a new token)
+- **Client storage:** JavaScript `globalThis.__RESONANTOS_BRIDGE_CONFIG__` in the Chrome extension context
+
+#### 3. Capability tokens (bridge server — scoped actions)
+
+- **Mechanism:** Per-capability static token; `X-ResonantOS-Bridge-Capability-Token` header
+- **Scopes:** `provider-credential-write`, `provider-routing-write`, `memory-settings-write`, `memory-source-browse`, `memory-source-scan`, `memory-source-manage`, `memory-source-move`, `memory-source-review`, `memory-source-intake`, `memory-source-file-intake`, `addon-execution-settings-write`, `browser-download-action`, `diagnostics-report-export`
+- **Lifecycle:** Generated at startup (or supplied via env vars); same lifetime as bridge token
+- **Purpose:** Sub-token model; different clients (e.g. extension vs. Hermes) can have different permissions
+
+#### 4. AI provider API keys
+
+- **Mechanism:** `Authorization: Bearer &lt;key&gt;` to external AI APIs
+- **Storage:** `~/ResonantOS_User/Secrets/provider-secrets.json` (plaintext JSON)
+- **No rotation mechanism in app**
+- **No password hashing** — these are raw API key strings, stored as-is
+
+#### 5. Telegram bot token
+
+- **Mechanism:** Telegram Bot API token; HTTP bearer to `api.telegram.org`
+- **Storage:** Same JSON file (`provider-secrets.json`)
+
+#### 6. Electron IPC (no external auth)
+
+- **Mechanism:** None — Electron contextIsolation + preload script boundary
+- **Same no-user-account model as Tauri**
+
+---
+
+### No user account system
+
+- No signup/login endpoints
+- No password hashing (`bcrypt`, `argon2`, `scrypt`)
+- No session cookies
+- No JWT issuance
+- No RBAC / roles
+- No 2FA / MFA
+- No account recovery flow
+
+All of the above are absent by design — the app is local-only, single-user.
+
+---
+
+### Authorization model
+
+- **Tauri:** Addon capability grants checked per command. Grants stored in JSON (no signing).
+- **Bridge:** Bridge token (all routes) + capability token (sensitive routes). Two-factor for writes.
+- **No row-level access control** — not applicable (single user).
+- **No admin/user role separation** — single identity.
+
+---
+
+### Public (unauthed) surface on bridge server
+
+Within the bridge server, all routes require the bridge token. There are no truly public routes — even `GET /status` requires the bridge token. From the host OS (non-browser contexts), any process that can connect to `127.0.0.1:{bridgePort}` can brute-force the token (though at 32 random bytes this is computationally infeasible).
+
+---
+
+### Audit logging
+
+- `provider_service.rs:824` — `append_provider_request_audit` writes JSONL to `~/ResonantOS_User/Logs/provider-requests.jsonl`
+- Records: request_id, thread_id, provider_id, model, status, duration_ms, usage, error
+- Explicitly excludes: prompts, messages, and secrets (`// Provider audit records deliberately exclude prompts, messages, and secrets`)
+- No prompts in logs — this is a deliberate privacy choice
+
+---
+
+### Rate limiting
+
+No rate limiting found on any endpoint (Tauri IPC, bridge server, or Electron IPC).
+
+---
+
+### Observations (auth)
+
+34. **No user authentication** — the app authenticates its components to each other (bridge token, capability tokens, addon grants) but has no user-facing login system. This is appropriate for a local desktop app.
+35. **Addon capability grants are unsigned JSON** — any process with write access to `runtime-state.json` can grant itself any capability.
+36. **No rate limiting on bridge server** — all bridge routes (including `/augmentor/chat`) have no rate limiting; protected only by bridge token possession.
+37. **Provider audit log excludes prompt content** — by design; prompts are not stored locally.
+38. **Bridge token written to disk** — `bridge-config.generated.js` at mode 0o600; accessible to the running user and root.
+
+
+---
+
+## Page 11: Persistent State &amp; Outbound Calls
+
+### Commands run
+
+```
+grep -n &#x27;Connection::open|db_path&#x27; src-tauri/src/archive_service.rs
+sed -n &#x27;99,170p&#x27; src-tauri/src/host_state.rs         → user state dirs
+sed -n &#x27;4682,4705p&#x27; run-browser-first.mjs             → news search
+grep -n &#x27;provider_request_audit&#x27; provider_service.rs
+```
+
+---
+
+### Persistent state
+
+#### A. User data root: `~/ResonantOS_User/`
+
+Directory structure (created by `ensure_portable_user_state`):
+
+| Directory | Contents |
+|-----------|---------|
+| `Memory/HUMAN_KNOWLEDGE/` | Human-curated markdown documents |
+| `Memory/EXTERNAL_KNOWLEDGE/` | Imported external sources |
+| `Memory/AI_MEMORY/` | AI-generated memory files |
+| `Memory/INTAKE/` | Ingestion queue |
+| `Memory/INDEX/` | Search indices |
+| `Memory/MANIFESTS/` | Source manifests |
+| `Config/` | App config; `portable-state-manifest.json` |
+| `Secrets/provider-secrets.json` | All AI provider API keys + Telegram token (plaintext JSON) |
+| `Wallets/` | Wallet-related files |
+| `Logs/provider-requests.jsonl` | Provider request audit log (no prompts) |
+| `Backups/snapshots/` | Backup snapshots |
+
+**No encryption at rest** on any of the above directories. Files protected by OS file permissions only.
+
+#### B. SQLite database (archive service)
+
+- **Engine:** SQLite (bundled via `rusqlite` `features = [&quot;bundled&quot;]`)
+- **Path:** `runtime.db_path()` — derived from archive runtime; inside `~/ResonantOS_User/` or configured archive root
+- **Connection:** In-process via `rusqlite`; no network
+- **Credentials:** None (local file)
+- **Encryption at rest:** None (standard SQLite, no SQLCipher)
+- **Migration tooling:** Custom Rust schema initialization
+- **Backup:** No automated backup mechanism observed in code
+
+#### C. bridge-config.generated.js
+
+- **Path:** `&lt;extensionRoot&gt;/src/bridge-config.generated.js`
+- **Contents:** Bridge token + all capability tokens
+- **Mode:** 0o600
+- **Lifetime:** Per bridge server session
+
+#### D. Hermes profile
+
+- **Path:** `~/.hermes/` or `HERMES_HOME`
+- **Contents:** Hermes CLI&#x27;s own state, conversation history, tool state
+- **Access:** Not controlled by this codebase; delegated to Hermes CLI
+
+---
+
+### Audit logs
+
+| Log | Location | What&#x27;s recorded | What&#x27;s excluded | Rotation |
+|-----|----------|----------------|----------------|---------|
+| Provider requests | `~/ResonantOS_User/Logs/provider-requests.jsonl` | request_id, model, provider, status, duration, usage, errors | Prompts, messages, secrets | None observed |
+| Recovery reports | `~/ResonantOS_User/Logs/recovery-reports/` | Recovery diagnostics | — | None observed |
+
+---
+
+### Outbound HTTP/HTTPS destinations
+
+| Destination | Auth | Data sent | Notes |
+|-------------|------|----------|-------|
+| `api.anthropic.com` | Bearer API key | Chat prompts, model params | Provider API |
+| `api.openai.com` | Bearer API key | Chat prompts, model params | Provider API; also env fallback |
+| `generativelanguage.googleapis.com` | Bearer API key | Chat prompts | Google Gemini |
+| `api.x.ai` | Bearer API key | Chat prompts | xAI Grok |
+| `api.deepseek.com` | Bearer API key | Chat prompts | |
+| `api.mistral.ai` | Bearer API key | Chat prompts | |
+| `dashscope-intl.aliyuncs.com` | Bearer API key | Chat prompts | Aliyun DashScope |
+| `api.cohere.com` | Bearer API key | Chat prompts | |
+| `api.ai21.com` | Bearer API key | Chat prompts | |
+| `open.bigmodel.cn` | Bearer API key | Chat prompts | Zhipu BigModel |
+| `integrate.api.nvidia.com` | Bearer API key | Chat prompts | NVIDIA NIM |
+| `openrouter.ai` | Bearer API key | Chat prompts | Router to multiple providers |
+| `api.together.xyz` | Bearer API key | Chat prompts | |
+| `api.groq.com` | Bearer API key | Chat prompts | |
+| `api.fireworks.ai` | Bearer API key | Chat prompts | |
+| `api.hyperbolic.xyz` | Bearer API key | Chat prompts | |
+| `api.minimax.io` | Bearer API key | Chat prompts; also env fallback | |
+| `news.google.com/rss` | None | Search query string | RSS fetch; `User-Agent: Mozilla/5.0 ResonantOS BrowserFirst` |
+| `resonantos.com` | None | Default browser tab navigation | |
+| Telegram Bot API | Bearer bot token | Bot messages; channel content | Via `telegram_service.rs` |
+| Local: `127.0.0.1:{memory_service_port}` | None | Archive memory queries | Internal loopback only |
+| Local: `127.0.0.1:{paperclip_port}` | None | Paperclip API calls | Internal loopback only |
+| Local: `127.0.0.1:{opencode_port}` | None | OpenCode session queries | Internal loopback only |
+| `192.168.1.77:30004` | Bearer API key | Chat prompts | Hardcoded LAN IP — GX10 Qwen endpoint |
+
+**Data categories sent to AI providers:** Chat prompts, conversation history, system prompts. May include user documents (via Living Archive context injection), user notes, and potentially PII depending on what the user ingests into memory. No redaction layer before sending.
+
+---
+
+### Cache
+
+No Redis, Memcached, or external cache. Only in-memory caches within process lifetime.
+
+---
+
+### Observations (state-outbound)
+
+39. **No encryption at rest** for `~/ResonantOS_User/` — API keys, memory documents, and wallet files are stored as plaintext protected only by OS file permissions.
+40. **`provider-secrets.json` uses OS umask permissions** (no explicit `0o600` in Rust write path) — world-readable risk on systems with loose umask.
+41. **User prompt content is sent to external AI providers** without a redaction layer — document content, notes, and memory injected into prompts may contain PII.
+42. **`news.google.com` fetch sends a custom User-Agent** identifying as ResonantOS — observable by Google.
+43. **Hardcoded LAN IP `192.168.1.77:30004`** in production code — a developer&#x27;s private machine endpoint.
+44. **No SQLite encryption** — archive database is unencrypted plaintext on disk.
+45. **No audit log rotation** — `provider-requests.jsonl` grows unboundedly.
+
+
+---
+
+## Page 12: Dependency Footprint
+
+### Commands run
+
+```
+node -e &quot;const p=require(&#x27;./package.json&#x27;); ...&quot;    → dep counts
+npm ls --depth=Infinity 2&gt;/dev/null | wc -l        → total installed tree: 27
+npm audit 2&gt;/dev/null                              → CVE findings
+npm audit --json                                   → detailed CVE
+cat src-tauri/Cargo.toml                           → 14 direct Rust deps
+wc -l src-tauri/Cargo.lock                         → 5630 lines
+grep &#x27;^name = &#x27; src-tauri/Cargo.lock | wc -l      → 534 Rust packages
+node -e &quot;...vitest...&quot;                              → vitest spec ^3.2.4
+```
+
+---
+
+### npm (JavaScript / TypeScript)
+
+| Category | Count |
+|----------|-------|
+| Direct runtime deps | 13 |
+| Direct dev deps | 12 |
+| Total installed packages | ~27 |
+| Direct-to-total multiplier | ~1.1× |
+
+**Note:** The `node_modules` tree is very small (27 lines of `npm ls` output) because this is a Tauri/desktop project — most heavy work is in Rust. The npm side is intentionally lean.
+
+**Runtime deps:**
+`@codemirror/commands`, `@codemirror/lang-markdown`, `@codemirror/language`, `@codemirror/state`, `@codemirror/view`, `@tauri-apps/api`, `@tauri-apps/plugin-dialog`, `@xterm/addon-fit`, `@xterm/xterm`, `react`, `react-dom`, `react-markdown`, `remark-gfm`
+
+**Dev deps:**
+`@tauri-apps/cli`, `@testing-library/jest-dom`, `@testing-library/react`, `@types/node`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `jsdom`, `playwright`, `typescript`, `vite`, `vitest`
+
+---
+
+### npm CVE findings
+
+| Package | CVE | Severity | CVSS | In | Notes |
+|---------|-----|----------|------|-----|-------|
+| `vitest` | GHSA-5xrq-8626-4rwp | **Critical** | 9.8 | devDependencies | &quot;When Vitest UI server is listening, arbitrary file can be read and executed&quot;; CWE-862; fix requires jump to `vitest@4.1.8` (breaking change from current `^3.2.4`) |
+
+**Impact assessment:** `vitest` is a dev/test dependency. The vulnerability only activates when the Vitest UI server is listening (started with `--ui` flag). In CI (no `--ui`), this is not exploitable. On a developer machine where `vitest --ui` is running, an attacker who can make HTTP requests to the UI server port can read and execute arbitrary files.
+
+---
+
+### Rust (Cargo)
+
+| Category | Count |
+|----------|-------|
+| Direct runtime deps | 14 |
+| Total lockfile packages | 534 |
+| Direct-to-total multiplier | 38× |
+
+**Direct deps (Cargo.toml):**
+`chrono`, `futures-util`, `libloading`, `portable-pty`, `reqwest` (rustls-tls), `rusqlite` (bundled), `serde`, `serde_json`, `sha2`, `tauri` (unstable), `tauri-plugin-dialog`, `tokio`, `tungstenite`
+
+`cargo-audit` not installed in this environment — could not run CVE scan for Rust deps.
+
+**Notable deps:**
+
+| Dep | Risk notes |
+|-----|-----------|
+| `libloading` | Dynamic library loading at runtime — used to load `.so`/`.dll`/`.dylib` files by path |
+| `portable-pty` | PTY management; paired with `terminal_run_command` which passes user commands to `sh -lc` |
+| `tungstenite` | WebSocket client; used for Chromium CDP communication |
+| `tauri` `unstable` feature | Opts into unstable Tauri APIs; may include APIs that change between releases |
+| `rusqlite` `bundled` | SQLite compiled into binary — no system SQLite; version pinned to crate release cycle |
+| `reqwest` `rustls-tls` | TLS via rustls (not native/OpenSSL); good isolation but older rustls versions have had security fixes |
+
+---
+
+### Native alternatives
+
+| Dep | Usage | Native alternative |
+|-----|-------|------------------|
+| `chrono` | Date/time | `std::time` covers basic use; `chrono` needed for RFC3339 formatting |
+| `sha2` | SHA-256 hashing | No stdlib SHA in Rust; `sha2` from `RustCrypto` is the standard approach — keep |
+| `remark-gfm` | GitHub Flavored Markdown parsing | `react-markdown` alone covers most cases; GFM adds table/strikethrough — narrow dep |
+
+---
+
+### Manifest drift
+
+- **`playwright`** in devDependencies — Playwright installed but no `.spec.ts` or `playwright.config` found. Likely vestigial from a planned E2E test setup.
+
+---
+
+### Observations (dep-footprint)
+
+46. **`vitest` &lt; 4.1.0 (critical CVE GHSA-5xrq-8626-4rwp)** — arbitrary file read/exec when Vitest UI server is running; dev-only impact but upgrade path requires major version bump.
+47. **Rust lockfile has 534 packages (38× multiplier)** — the Tauri + Tokio + reqwest + rusqlite ecosystem is large; `cargo audit` not installed so CVE status unknown.
+48. **`libloading`** — dynamic library loading; if a library path can be influenced by user input, this is a code execution surface. Audit how library paths are constructed.
+49. **`tauri` `unstable` feature** — explicitly opts into unstable Tauri APIs; behavior may change between patch releases.
+50. **`playwright`** in devDeps appears unused — no test files consuming it found.
+
+
+---
+
+## Page 13: Supply-Chain Evaluation
+
+### Commands run
+
+```
+grep -n &quot;libloading|portable.pty|tungstenite|react.markdown|remark.gfm|reqwest&quot; src-tauri/Cargo.toml
+grep -rn &quot;libloading|Library::new|unsafe.*lib&quot; src-tauri/src/
+grep -rn &quot;react-markdown|ReactMarkdown|remark&quot; src/ (*.tsx/*.ts)
+grep -n &quot;Library::new|RESONANTOS_NATIVE_BROWSER_BRIDGE|bridge_path|unsafe&quot; src-tauri/src/browser_native_service.rs
+```
+
+### Five-question supply-chain evaluation for notable deps
+
+For each notable dependency, five questions are assessed:
+1. **Breadth/maintenance** — Is the dep broadly used and actively maintained?
+2. **Version currency** — Is the pinned version current or lagging behind security fixes?
+3. **Privileged surface** — Does the dep touch network, filesystem, exec, or native code?
+4. **User-input reachability** — Can attacker-controlled input reach the dep&#x27;s unsafe surface?
+5. **Blast radius** — If the dep is compromised (malicious update / CVE), what is the impact?
+
+---
+
+#### 1. `vitest` ^3.2.4 (devDependency)
+
+| Question | Finding |
+|----------|---------|
+| Breadth/maintenance | Widely used, actively maintained by Vite team |
+| Version currency | **Lagging** — GHSA-5xrq-8626-4rwp is fixed in 4.1.8; current pin `^3.2.4` is never satisfied by 4.x |
+| Privileged surface | Yes — UI server reads and executes files on the local filesystem |
+| User-input reachability | Only when `vitest --ui` is running; local attacker or browser-based CSRF can reach port |
+| Blast radius (compromise) | Dev-only; would allow code execution on a developer&#x27;s machine when running tests with UI; not in production binary |
+
+**Assessment:** Medium risk. Not shipped in the Tauri binary. Upgrade to vitest 4.x required to resolve CVE; this is a breaking-change version bump that needs attention in CI configuration.
+
+---
+
+#### 2. `libloading` 0.8 (Rust runtime)
+
+| Question | Finding |
+|----------|---------|
+| Breadth/maintenance | Small, focused crate; actively maintained by the Rust ecosystem |
+| Version currency | 0.8.x is current stable |
+| Privileged surface | **Critical** — loads `.so`/`.dylib`/`.dll` files via `unsafe { Library::new(&amp;path) }` at runtime |
+| User-input reachability | Library path is sourced from env var `RESONANTOS_NATIVE_BROWSER_BRIDGE` or a fixed candidate list. If a user/process can set `RESONANTOS_NATIVE_BROWSER_BRIDGE`, they can load an arbitrary shared library |
+| Blast radius (compromise) | Full native code execution in the Tauri process context with all user privileges |
+
+**Assessment:** High risk on the configuration path. `RESONANTOS_NATIVE_BROWSER_BRIDGE` env var → arbitrary library load is a code-execution primitive. Env var is explicitly cleared after load (`std::env::remove_var`) suggesting awareness, but the window between process start and load remains exploitable. Candidate list fallback is bounded to known paths — safer than the env var path.
+
+---
+
+#### 3. `portable-pty` 0.8 (Rust runtime)
+
+| Question | Finding |
+|----------|---------|
+| Breadth/maintenance | Wez Furlong&#x27;s crate; widely used in terminal emulator projects; actively maintained |
+| Version currency | 0.8.x is current |
+| Privileged surface | **High** — allocates a PTY and spawns a shell process; paired with `sh -lc &lt;user_command&gt;` in `terminal_service.rs` |
+| User-input reachability | Any JavaScript code running in the Tauri WebView can call `terminal_run_command` (one of the 128 registered IPC commands) and pass arbitrary shell commands |
+| Blast radius (compromise) | Full shell execution on the host OS; `portable-pty` itself is not the risk — the risk is the pairing with unrestricted shell execution |
+
+**Assessment:** The dep is sound; the usage pattern is the risk. `portable-pty` is being used correctly as a PTY layer. The threat is that `terminal_run_command` passes unsanitized input to `sh -lc` — any XSS or compromised extension reaching the Tauri IPC layer achieves OS code execution.
+
+---
+
+#### 4. `react-markdown` + `remark-gfm` (npm runtime)
+
+| Question | Finding |
+|----------|---------|
+| Breadth/maintenance | `react-markdown` is widely used; `remark-gfm` from the unified/remark ecosystem; both actively maintained |
+| Version currency | Version pins not checked against advisories here; no CVEs in `npm audit` output |
+| Privileged surface | Renders HTML from Markdown content — XSS risk if `rehype-raw` or `allowDangerousHtml` is enabled |
+| User-input reachability | **Directly** — AI provider responses are passed to `&lt;ReactMarkdown&gt;` in `MessageContent.tsx:9` |
+| Blast radius (compromise) | If `react-markdown` is compromised or misconfigured to allow raw HTML, a malicious AI response could inject JS into the Tauri WebView; with no CSP (`&quot;csp&quot;: null`), injected scripts run unrestricted and can call Tauri IPC commands |
+
+**Assessment:** Medium-high risk in context. `react-markdown` by default sanitizes HTML (does not pass through raw HTML tags). However: (a) the CSP=null means any HTML injection that does slip through is unrestricted; (b) if `rehype-raw` is ever added as a plugin, the blast radius becomes critical. Verify `MessageContent.tsx` does not add `rehype-raw` or `allowDangerousHtml`. Current usage appears safe — no raw HTML plugins observed.
+
+---
+
+#### 5. `reqwest` 0.12 / `tungstenite` 0.24 (Rust runtime)
+
+| Question | Finding |
+|----------|---------|
+| Breadth/maintenance | Both widely used, actively maintained Rust crates |
+| Version currency | 0.12 (reqwest) and 0.24 (tungstenite) are current stable lines |
+| Privileged surface | Network — all outbound AI provider API calls (15+ endpoints) go through `reqwest`; Chromium CDP WebSocket through `tungstenite` |
+| User-input reachability | API base URLs are configurable (settings); a user-set base URL could redirect traffic through a malicious endpoint. CDP target is localhost-only (127.0.0.1) by design |
+| Blast radius (compromise) | If `reqwest` is compromised: exfiltration of all AI API keys and conversation content to attacker infrastructure; if `tungstenite` is compromised: CDP commands could be injected into the Chromium session |
+
+**Assessment:** Low-medium risk for the dep supply chain itself. Key concern is the configurable API base URL — a social-engineering or settings-manipulation attack could redirect provider traffic to a hostile endpoint. The custom preset `192.168.1.77:30004` demonstrates that custom non-TLS endpoints are supported in production.
+
+---
+
+### Supply-chain observations
+
+51. **`RESONANTOS_NATIVE_BROWSER_BRIDGE` env var → `Library::new` = arbitrary native code load** — if an attacker can set this env var before process start (e.g., via a parent process, `.env` file, or launch configuration manipulation), they achieve native code execution within the Tauri process. The env var is cleared post-load but the damage window is open at startup.
+52. **`vitest` GHSA-5xrq-8626-4rwp** — upgrade to vitest 4.x needed; dev-only but affects all developers running `--ui`.
+53. **`react-markdown` renders AI responses with no CSP backstop** — currently safe (no raw HTML plugins), but one future dependency change (`rehype-raw`) would create a critical XSS→IPC→shell chain.
+54. **`cargo-audit` absent** — 534 Rust lockfile packages cannot be scanned for CVEs in this environment. Recommend adding `cargo audit` to the CI pipeline (`alpha-build.yml`).
+55. **Configurable AI provider base URLs accept HTTP (non-TLS)** — the `192.168.1.77:30004` preset and the general URL override mechanism allow cleartext transmission of API keys and prompts.
+
+</pre>
+      </details>
+    
+    </section>
+  </main>
+</body>
+</html>

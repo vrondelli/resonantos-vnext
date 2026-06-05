@@ -1,0 +1,969 @@
+{
+  "dispatch_id": "resonantos-security-agent-research-20260603",
+  "parent_dispatch_id": null,
+  "intent": {
+    "raw": "Prepare a research strategy to map all ResonantOS security attack surfaces and vectors, including profiler-discovered browser-first, Electron, extension, local listener, native loading, and release-trust surfaces, then design specialized red-team skills, maturity validation, gap discovery, tests, and security architecture output.",
+    "objective": "Create a governed DAG research route for ResonantOS security-agent R&D that maps architecture and attack surfaces before authorizing specialized red-team skill design and test generation.",
+    "target_artifact": "development/security-pipeline/research/SECURITY-AGENT-RESEARCH-STRATEGY.md",
+    "operator_sentence": "Use dispatch-spec to govern a staged DAG: recover context, map surfaces, research agentic attack intelligence, fan out by security surface, synthesize tools and skill specs, validate installed agent skills, audit malicious skill and agent behavior, generate safe tests, gate active red-team simulations, score maturity, and hand off validated checks to the security pipeline."
+  },
+  "mode": "research",
+  "techniques": [
+    {
+      "id": "dag_surface_fanout",
+      "source": "local-extension",
+      "validation_note": "Used as a research graph technique: dependency-sensitive mapping and fanout must be reflected in steps, joins, and gates."
+    },
+    "delegation_boundary",
+    "execution_receipt_handoff",
+    "state_namespace_boundary",
+    "memory_promotion_split"
+  ],
+  "route_menu": {
+    "context_hint": "The route chooses architecture-first DAG fanout because attack surfaces are cross-layer and unsafe to probe before boundaries and authorization are known.",
+    "items": [
+      {
+        "id": "architecture-first-dag",
+        "label": "Architecture-first DAG",
+        "description": "Map trust boundaries and surfaces before specialized skill design and red-team simulation.",
+        "capability_ref": "dispatch-spec",
+        "pattern": "synthesis"
+      },
+      {
+        "id": "pipeline-first",
+        "label": "Pipeline-first",
+        "description": "Continue the existing supply-chain MVP before broader security-agent design.",
+        "capability_ref": "task-session",
+        "pattern": "sequential"
+      },
+      {
+        "id": "immediate-red-team",
+        "label": "Immediate red-team",
+        "description": "Start active attack simulation immediately; rejected because authorization and fixture boundaries are not yet defined.",
+        "capability_ref": "experiment-harness",
+        "pattern": "toy_game"
+      }
+    ],
+    "selected_item_id": "architecture-first-dag"
+  },
+  "boundary_evidence": {
+    "boundaries": [
+      {
+        "boundary_id": "research-to-execution",
+        "kind": "capability_handoff",
+        "from_owner": "dispatch-spec",
+        "to_owner": "task-session",
+        "applies_to_steps": [
+          "installed-agent-skill-validation",
+          "malicious-skill-agent-audit",
+          "safe-test-generation",
+          "pipeline-promotion-handoff"
+        ],
+        "contract": "Task Session may implement safe deterministic tests and pipeline checks only inside approved task scope.",
+        "on_violation": "block"
+      },
+      {
+        "boundary_id": "active-red-team-approval",
+        "kind": "human_approval",
+        "from_owner": "security-agent-research",
+        "to_owner": "experiment-harness",
+        "applies_to_steps": [
+          "authorized-red-team-simulation"
+        ],
+        "contract": "Active or destructive red-team simulation requires explicit operator approval, scoped target, rollback plan, and evidence receipt.",
+        "on_violation": "block"
+      }
+    ],
+    "authority": {
+      "lifecycle": "dispatch-spec",
+      "research": "context-builder",
+      "skill_design": "skill-creator",
+      "execution": "task-session",
+      "active_simulation": "experiment-harness",
+      "validation": "security-pipeline",
+      "evidence": "signal-observer",
+      "promotion": "owning capability"
+    },
+    "receipts": [
+      {
+        "receipt_id": "surface-map-receipt",
+        "producer": "context-builder",
+        "required_fields": [
+          "run_id",
+          "artifacts",
+          "validation_result",
+          "audit_reference",
+          "residue"
+        ],
+        "stores": [
+          "development/security-pipeline/research/surface-map.md"
+        ],
+        "on_missing": "block"
+      },
+      {
+        "receipt_id": "skill-design-receipt",
+        "producer": "skill-creator",
+        "required_fields": [
+          "run_id",
+          "artifacts",
+          "validation_result",
+          "approval_record",
+          "audit_reference",
+          "residue"
+        ],
+        "stores": [
+          "development/security-pipeline/research/skill-designs/"
+        ],
+        "on_missing": "flag"
+      },
+      {
+        "receipt_id": "test-generation-receipt",
+        "producer": "task-session",
+        "required_fields": [
+          "run_id",
+          "artifacts",
+          "validation_result",
+          "approval_record",
+          "audit_reference",
+          "residue"
+        ],
+        "stores": [
+          "development/security-pipeline/research/test-ledger.md",
+          ".arcanum/observability/signals/sigil-invocations.jsonl"
+        ],
+        "on_missing": "flag"
+      },
+      {
+        "receipt_id": "installed-agent-skill-validation-receipt",
+        "producer": "task-session",
+        "required_fields": [
+          "run_id",
+          "artifacts",
+          "validation_result",
+          "audit_reference",
+          "residue"
+        ],
+        "stores": [
+          "development/security-pipeline/research/installed-agent-skill-validation.md",
+          ".arcanum/observability/signals/sigil-invocations.jsonl"
+        ],
+        "on_missing": "block"
+      },
+      {
+        "receipt_id": "malicious-skill-agent-audit-receipt",
+        "producer": "task-session",
+        "required_fields": [
+          "run_id",
+          "artifacts",
+          "validation_result",
+          "approval_record",
+          "audit_reference",
+          "residue"
+        ],
+        "stores": [
+          "development/security-pipeline/research/malicious-skill-agent-audit.md",
+          ".arcanum/observability/signals/sigil-invocations.jsonl"
+        ],
+        "on_missing": "block"
+      }
+    ],
+    "state_namespaces": [
+      {
+        "namespace": "repo-source",
+        "owner": "git/worktree",
+        "write_policy": "Task Session may write only approved artifacts and tests in the active branch."
+      },
+      {
+        "namespace": "user-runtime-state",
+        "owner": "operator",
+        "write_policy": "Research and red-team tests must not mutate real user app state without explicit approval."
+      },
+      {
+        "namespace": "external-systems",
+        "owner": "third-party providers",
+        "write_policy": "No active probing or paid API calls without explicit scoped approval."
+      }
+    ],
+    "promotion_splits": [
+      {
+        "source": "execution evidence",
+        "target": "security pipeline registry",
+        "rule": "requires task-session validation and operator review before promotion to block policy",
+        "on_violation": "block"
+      },
+      {
+        "source": "research evidence",
+        "target": "skill or canonical knowledge",
+        "rule": "requires owning capability review before canonical promotion",
+        "on_violation": "block"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "step_id": "recover-existing-context",
+      "name": "Recover existing security agent and pipeline evidence",
+      "capability_ref": "context-builder",
+      "pattern": "route",
+      "parallel": false,
+      "inputs": [
+        {
+          "kind": "intent",
+          "ref": "intent.raw"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/SECURITY-PIPELINE-DESIGN.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": "security-reviewer-first-run-report"
+        },
+        {
+          "kind": "artifact",
+          "ref": "threat-model-profiler-run-bahFJMEQTAk5"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "frame",
+          "ref": "resonantos-security-context-frame"
+        },
+        {
+          "kind": "artifact",
+          "ref": "threat-model-profiler-run-bahFJMEQTAk5"
+        }
+      ],
+      "join_policy": "none",
+      "stop_conditions": [
+        "Block if the first-run report and current pipeline artifacts cannot be recovered.",
+        "Flag if repository status has changed enough that source paths need fresh scanning."
+      ]
+    },
+    {
+      "step_id": "architecture-surface-map",
+      "name": "Map security architecture, assets, trust boundaries, and attack surfaces",
+      "capability_ref": "x-ray",
+      "pattern": "xray",
+      "parallel": false,
+      "techniques": [
+        {
+          "id": "dag_surface_fanout",
+          "source": "local-extension",
+          "validation_note": "This step produces the surface graph that controls downstream fanout."
+        }
+      ],
+      "inputs": [
+        {
+          "kind": "frame",
+          "ref": "resonantos-security-context-frame"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-architecture.md"
+        },
+        {
+          "kind": "handle",
+          "ref": "security-surface-graph"
+        }
+      ],
+      "join_policy": "none",
+      "convergence_criteria": [
+        "Every mapped surface names assets, boundary, current controls, likely vectors, and evidence paths.",
+        "Architecture distinguishes local desktop risk from internet-facing web risk.",
+        "Tauri IPC and webview-to-core trust boundary are explicitly modeled.",
+        "Browser-first bridge, side-panel extension, Electron IPC, local listeners, memory service host override, terminal shell, native library loading, and release artifact trust are explicitly modeled."
+      ],
+      "stop_conditions": [
+        "Block downstream red-team design if high-risk surfaces lack trust boundary descriptions."
+      ]
+    },
+    {
+      "step_id": "threat-model-vector-catalog",
+      "name": "Create threat model and vector catalog",
+      "capability_ref": "residuality-spec",
+      "pattern": "sequential",
+      "parallel": false,
+      "inputs": [
+        {
+          "kind": "handle",
+          "ref": "security-surface-graph"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-architecture.md"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/threat-vector-catalog.md"
+        },
+        {
+          "kind": "frame",
+          "ref": "surface-vector-priority-frame"
+        }
+      ],
+      "join_policy": "none",
+      "convergence_criteria": [
+        "Each vector includes preconditions, abuse path, current control, testability, and severity rationale.",
+        "Each vector is tagged safe-test, approval-required-test, or blocked-test.",
+        "Profiler observations for CSP null, unsigned capability JSON, bridge route auth tiers, full env forwarding, hardcoded LAN endpoint, unsigned artifacts, no rate limiting, and missing SECURITY.md are represented as vectors or governance gaps."
+      ],
+      "stop_conditions": [
+        "Block active-test planning for any vector missing approval classification."
+      ]
+    },
+    {
+      "step_id": "agentic-attack-intelligence",
+      "name": "Research agentic attack patterns and developer-extension analogues",
+      "capability_ref": "context-builder",
+      "pattern": "sequential",
+      "parallel": false,
+      "inputs": [
+        {
+          "kind": "frame",
+          "ref": "surface-vector-priority-frame"
+        },
+        {
+          "kind": "external_context",
+          "ref": "OWASP Agentic Skills Top 10, OWASP Agentic AI threats, OWASP AI Agent Security Cheat Sheet, OWASP LLM Top 10, VS Code extension security docs"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/agentic-attack-intelligence.md"
+        },
+        {
+          "kind": "frame",
+          "ref": "agentic-abuse-case-frame"
+        }
+      ],
+      "join_policy": "none",
+      "convergence_criteria": [
+        "Research covers prompt injection, goal hijack, tool abuse, excessive agency, data exfiltration, memory poisoning, approval bypass, multi-agent cascading failures, and supply-chain compromise.",
+        "Research includes developer-extension analogues such as untrusted workspace execution, activation events, publisher trust, and extension runtime behavior.",
+        "Every abuse case has prevention controls and safe test ideas."
+      ],
+      "stop_conditions": [
+        "Block any proposal to execute malware-like, self-replicating, credential-stealing, or exfiltration behavior.",
+        "Flag any source that is not official documentation or a clearly marked external research reference."
+      ]
+    },
+    {
+      "step_id": "surface-specialist-fanout",
+      "name": "Research specialized security skills by surface and vector family",
+      "capability_ref": "robot-talks",
+      "pattern": "fanout",
+      "parallel": true,
+      "roles": [
+        "A1 tauri-ipc-capability-boundary",
+        "A2 webview-csp-and-injection",
+        "A3 subprocess-and-toolchain",
+        "A4 provider-http-ssrf-and-quota",
+        "A5 addon-manifest-and-filesystem",
+        "A6 browser-automation-cdp-and-ffi",
+        "A7 secrets-data-lifecycle-and-logs",
+        "A8 supply-chain-release-integrity",
+        "A9 external-integrations-telegram-paperclip-mcp",
+        "A10 installed-agent-skills-runtime-validation",
+        "A11 malicious-skill-agent-behavior-analysis",
+        "A12 agentic-attack-intelligence",
+        "A13 browser-first-bridge-extension",
+        "A14 electron-ipc-boundary",
+        "A15 local-listener-topology",
+        "A16 native-loading-terminal-execution",
+        "A17 disclosure-release-trust"
+      ],
+      "inputs": [
+        {
+          "kind": "frame",
+          "ref": "surface-vector-priority-frame"
+        },
+        {
+          "kind": "frame",
+          "ref": "agentic-abuse-case-frame"
+        },
+        {
+          "kind": "external_context",
+          "ref": "official-security-tool-docs"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "ledger",
+          "ref": "surface-specialist-research-ledger"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/skill-family-candidates.md"
+        }
+      ],
+      "join_policy": "parent_synthesis",
+      "convergence_criteria": [
+        "Each role identifies existing tools before proposing custom checks.",
+        "Each role proposes one safe deterministic test and one approval-required stress test where applicable.",
+        "Each role defines maturity criteria from level 0 to level 4.",
+        "The installed-agent-skills role identifies skill install drift, missing support files, command-resolution failures, and frontmatter/schema gaps.",
+        "The malicious-skill role identifies suspicious scripts, tool calls, secret reads, network egress, persistence, memory mutation, and permission-purpose mismatch.",
+        "The agentic-attack-intelligence role maps prompt-injection worms, memory poisoning, goal hijack, tool abuse, approval bypass, and extension-supply-chain analogues.",
+        "Profiler-specific roles cover browser-first bridge route authorization, Electron IPC parity, local listener exposure, native library loading, terminal shell blast radius, unsigned artifacts, and disclosure governance."
+      ],
+      "evidence_artifact": "development/security-pipeline/research/skill-family-candidates.md",
+      "stop_conditions": [
+        "Block skill design if a role cannot cite repository evidence for its surface.",
+        "Flag tool recommendations that lack official documentation or maintained source."
+      ]
+    },
+    {
+      "step_id": "tool-and-skill-synthesis",
+      "name": "Synthesize tool choices and skill design architecture",
+      "capability_ref": "distill",
+      "pattern": "synthesis",
+      "parallel": false,
+      "inputs": [
+        {
+          "kind": "ledger",
+          "ref": "surface-specialist-research-ledger"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-agent-skill-architecture.md"
+        },
+        {
+          "kind": "frame",
+          "ref": "approved-safe-test-candidate-frame"
+        }
+      ],
+      "join_policy": "none",
+      "convergence_criteria": [
+        "No custom adapter is proposed where a maintained tool already covers the check.",
+        "Skill boundaries remain one surface/vector family each.",
+        "Each skill has a pipeline promotion path."
+      ],
+      "stop_conditions": [
+        "Block if a skill crosses too many unrelated surfaces to validate deterministically."
+      ]
+    },
+    {
+      "step_id": "installed-agent-skill-validation",
+      "name": "Validate installed agent skills and runtime surfaces",
+      "capability_ref": "task-session",
+      "pattern": "validation",
+      "parallel": false,
+      "inputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-agent-skill-architecture.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": ".agents/skills/"
+        },
+        {
+          "kind": "artifact",
+          "ref": ".codex/skills/"
+        },
+        {
+          "kind": "artifact",
+          "ref": ".claude/skills/"
+        },
+        {
+          "kind": "artifact",
+          "ref": ".github/skills/"
+        },
+        {
+          "kind": "artifact",
+          "ref": "tools/arcanum"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/installed-agent-skill-validation.md"
+        },
+        {
+          "kind": "frame",
+          "ref": "installed-skill-readiness-frame"
+        }
+      ],
+      "join_policy": "none",
+      "evidence_artifact": "development/security-pipeline/research/installed-agent-skill-validation.md",
+      "convergence_criteria": [
+        "Installed skills are inventoried across .agents, .codex, .claude, and .github/skills surfaces.",
+        "Every security-agent skill candidate has valid frontmatter, readable SKILL.md, required support files, and explicit tool/permission assumptions.",
+        "Command resolution smoke tests identify missing runtime files, schema/catalog dependencies, and alias drift.",
+        "Any missing validator support files or stale generated surfaces are recorded before safe tests are generated."
+      ],
+      "stop_conditions": [
+        "Block use of any installed skill as a security-control primitive if it is not discoverable, structurally valid, or backed by required support files.",
+        "Flag generated runtime-surface drift when one install surface has a newer skill snapshot than another."
+      ]
+    },
+    {
+      "step_id": "malicious-skill-agent-audit",
+      "name": "Audit installed skills and agents for malicious behavior",
+      "capability_ref": "task-session",
+      "pattern": "validation",
+      "parallel": false,
+      "inputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/installed-agent-skill-validation.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/agentic-attack-intelligence.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-agent-skill-architecture.md"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/malicious-skill-agent-audit.md"
+        },
+        {
+          "kind": "frame",
+          "ref": "malicious-skill-risk-frame"
+        }
+      ],
+      "join_policy": "none",
+      "evidence_artifact": "development/security-pipeline/research/malicious-skill-agent-audit.md",
+      "convergence_criteria": [
+        "Every installed skill, agent, hook, script, generated command, and tool config is checked for suspicious shell, filesystem, network, secret, persistence, and memory-write behavior.",
+        "Every requested tool or permission is mapped to the skill or agent purpose.",
+        "Network-capable and secret-accessing patterns are recorded even when not executed.",
+        "Findings distinguish malicious, suspicious-needs-review, justified, and blocked."
+      ],
+      "stop_conditions": [
+        "Block use of a skill or agent if it attempts unexplained secret access, exfiltration, persistence, self-replication, destructive writes, or external network calls.",
+        "Block execution of suspicious scripts during audit; inspect statically unless operator explicitly approves sandboxed dynamic analysis."
+      ]
+    },
+    {
+      "step_id": "safe-test-generation",
+      "name": "Generate safe deterministic tests and fixtures",
+      "capability_ref": "task-session",
+      "pattern": "validation",
+      "parallel": false,
+      "inputs": [
+        {
+          "kind": "frame",
+          "ref": "approved-safe-test-candidate-frame"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-agent-skill-architecture.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/installed-agent-skill-validation.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/malicious-skill-agent-audit.md"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/test-ledger.md"
+        }
+      ],
+      "join_policy": "none",
+      "evidence_artifact": "development/security-pipeline/research/test-ledger.md",
+      "convergence_criteria": [
+        "Generated tests run without external systems or real user state mutation.",
+        "Each test records surface id, vector id, fixture, expected result, and validation command.",
+        "Agentic abuse-case tests cover prompt override, tool misuse, privilege escalation, memory poisoning, data exfiltration prevention, approval bypass, recursive tool abuse, and multi-agent chaining boundaries."
+      ],
+      "stop_conditions": [
+        "Block any test that mutates real secrets, live browser profiles, external APIs, or broad network targets."
+      ]
+    },
+    {
+      "step_id": "authorized-red-team-simulation",
+      "name": "Prepare authorized red-team simulation plan",
+      "capability_ref": "experiment-harness",
+      "pattern": "toy_game",
+      "parallel": false,
+      "inputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/threat-vector-catalog.md"
+        },
+        {
+          "kind": "human_answer",
+          "ref": "operator-active-test-approval"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/authorized-red-team-plan.md"
+        }
+      ],
+      "join_policy": "human_gate",
+      "evidence_artifact": "development/security-pipeline/research/authorized-red-team-plan.md",
+      "convergence_criteria": [
+        "Plan names target, scope, rollback, tool, test data, expected evidence, and stop condition.",
+        "Plan separates local fixture simulation from live app or external-system testing."
+      ],
+      "stop_conditions": [
+        "Block if operator approval is absent.",
+        "Block if target scope, rollback, or external-system boundary is unclear."
+      ]
+    },
+    {
+      "step_id": "maturity-scoring-gap-register",
+      "name": "Score maturity and create gap register",
+      "capability_ref": "implementation-layering",
+      "pattern": "synthesis",
+      "parallel": false,
+      "inputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/test-ledger.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/malicious-skill-agent-audit.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/skill-family-candidates.md"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-maturity-matrix.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-gap-register.md"
+        }
+      ],
+      "join_policy": "none",
+      "convergence_criteria": [
+        "Every surface has a maturity level from 0 to 4.",
+        "Every gap has owner candidate, evidence, next test, and pipeline promotion option."
+      ],
+      "stop_conditions": [
+        "Flag any level 3 or 4 score that lacks test or pipeline evidence."
+      ]
+    },
+    {
+      "step_id": "pipeline-promotion-handoff",
+      "name": "Prepare handoff into security pipeline implementation",
+      "capability_ref": "invoke",
+      "pattern": "handoff",
+      "parallel": false,
+      "techniques": [
+        "delegation_boundary",
+        "execution_receipt_handoff",
+        "state_namespace_boundary",
+        "memory_promotion_split"
+      ],
+      "inputs": [
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-gap-register.md"
+        },
+        {
+          "kind": "artifact",
+          "ref": "development/security-pipeline/research/security-maturity-matrix.md"
+        }
+      ],
+      "outputs": [
+        {
+          "kind": "handoff",
+          "ref": "development/security-pipeline/research/SECURITY-AGENT-HANDOFF.md"
+        },
+        {
+          "kind": "handoff",
+          "ref": "$invoke handoff use context builder to prepare development for <finding-or-surface>"
+        }
+      ],
+      "join_policy": "none",
+      "evidence_artifact": "development/security-pipeline/research/SECURITY-AGENT-HANDOFF.md",
+      "convergence_criteria": [
+        "Handoff selects one next surface skill and one safe check implementation.",
+        "Every finding that needs development is converted into an invoke handoff using the exact sentence: $invoke handoff use context builder to prepare development for <finding-or-surface>.",
+        "The handoff must use context-builder to gather bounded repository evidence, target files, constraints, validation commands, and risk boundaries before implementation.",
+        "Any registry promotion starts as observe or warn unless deterministic evidence supports block."
+      ],
+      "stop_conditions": [
+        "Ask the operator before implementing new source checks or running active simulations.",
+        "Block direct promotion from research notes to canonical skills without owner review."
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "gate_id": "g1-context-recovered",
+      "kind": "validation",
+      "owner": "dispatch-spec",
+      "condition": "Existing security-reviewer and security-pipeline evidence must be acknowledged before new research claims are made.",
+      "on_fail": "block"
+    },
+    {
+      "gate_id": "g2-architecture-before-attack",
+      "kind": "quality",
+      "owner": "dispatch-spec",
+      "condition": "Threat vectors and red-team skills must derive from the surface graph and architecture artifact.",
+      "on_fail": "block"
+    },
+    {
+      "gate_id": "g3-active-test-approval",
+      "kind": "human_approval",
+      "owner": "operator",
+      "condition": "Active red-team simulation must have explicit approval, scoped target, rollback plan, and evidence receipt.",
+      "on_fail": "block"
+    },
+    {
+      "gate_id": "g4-promotion-guardrail",
+      "kind": "promotion_guardrail",
+      "owner": "dispatch-spec",
+      "condition": "Execution evidence must not promote inventory, skill, spell, or blocking pipeline policy without owner review.",
+      "on_fail": "block"
+    }
+  ],
+  "subagent_strategy": {
+    "status": "recommended",
+    "trigger": "The research covers many cross-layer surfaces with different tools, threat models, and validation criteria.",
+    "explanation": "Surface-specialist roles can research independently and return comparable receipts, while the parent route preserves architecture context, authorization gates, and synthesis authority.",
+    "context": [
+      "ResonantOS is a Tauri desktop app with Rust IPC, React webview, subprocesses, provider APIs, browser automation, local data stores, external integrations, and supply-chain release surfaces.",
+      "The first security-reviewer run and current security pipeline artifacts are the starting evidence."
+    ],
+    "parallelism": "fanout",
+    "join_policy": "parent_synthesis",
+    "authorization": "requires_user_permission",
+    "permission_prompt": "Approve running the surface-specialist research fanout? This only authorizes research and safe artifact generation, not active exploit testing.",
+    "roles": [
+      {
+        "role_id": "A1-tauri-ipc-capability-boundary",
+        "purpose": "Map Tauri commands, capability gates, ungated commands, and IPC payload abuse tests.",
+        "ownership": "security-tauri-ipc-boundary",
+        "owns": "Tauri IPC and capability boundary research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A2-webview-csp-and-injection",
+        "purpose": "Map CSP, DOM sinks, markdown rendering, frontend XSS paths, and webview-to-IPC escalation.",
+        "ownership": "security-webview-csp-injection",
+        "owns": "Webview CSP and injection research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A3-subprocess-and-toolchain",
+        "purpose": "Map command spawning, environment passing, binary resolution, and script execution risk.",
+        "ownership": "security-subprocess-toolchain",
+        "owns": "Subprocess and toolchain research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A4-provider-http-ssrf-and-quota",
+        "purpose": "Map provider request construction, local subnet discovery, SSRF controls, and quota controls.",
+        "ownership": "security-provider-network",
+        "owns": "Provider network research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A5-addon-manifest-and-filesystem",
+        "purpose": "Map addon manifest validation, filesystem writes, path containment, and traversal tests.",
+        "ownership": "security-addon-filesystem",
+        "owns": "Addon manifest and filesystem research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A6-browser-automation-cdp-and-ffi",
+        "purpose": "Map Chromium/CDP exposure, session lifecycle, native browser FFI, and profile residue.",
+        "ownership": "security-browser-automation",
+        "owns": "Browser automation and FFI research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A7-secrets-data-lifecycle-and-logs",
+        "purpose": "Map plaintext secrets, file permissions, log redaction, retention, and cleanup controls.",
+        "ownership": "security-secrets-data-lifecycle",
+        "owns": "Secrets and data lifecycle research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A8-supply-chain-release-integrity",
+        "purpose": "Map npm, Cargo, GitHub Actions, SBOM, provenance, audit, and release integrity controls.",
+        "ownership": "security-supply-chain-release",
+        "owns": "Supply chain and release integrity research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A9-external-integrations",
+        "purpose": "Map Telegram, Paperclip, provider APIs, and MCP integration token/data flow risks.",
+        "ownership": "security-external-integrations",
+        "owns": "External integrations research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A10-installed-agent-skills-runtime-validation",
+        "purpose": "Map installed skill surfaces, command resolution, frontmatter validity, support-file availability, generated-surface drift, and security-control readiness.",
+        "ownership": "security-agent-skill-runtime-validation",
+        "owns": "Installed agent skills validation research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout",
+          "installed-agent-skill-validation"
+        ]
+      },
+      {
+        "role_id": "A11-malicious-skill-agent-behavior-analysis",
+        "purpose": "Map malicious instructions, unexpected shell or network calls, secret reads, memory writes, persistence, propagation, and permission-purpose mismatch in installed skills and agents.",
+        "ownership": "security-agent-skill-malware-analysis",
+        "owns": "Malicious skill and agent behavior audit receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout",
+          "malicious-skill-agent-audit"
+        ]
+      },
+      {
+        "role_id": "A12-agentic-attack-intelligence",
+        "purpose": "Map current agent-specific attack classes including prompt-injection worms, memory poisoning, goal hijack, tool abuse, approval bypass, and developer-extension supply-chain analogues.",
+        "ownership": "security-agentic-attack-intelligence",
+        "owns": "Agentic attack intelligence research receipt",
+        "applies_to_steps": [
+          "agentic-attack-intelligence",
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A13-browser-first-bridge-extension",
+        "purpose": "Map browser-first bridge routes, bridge token and capability-token coverage, CORS extension-origin assumptions, side-panel extension page-content access, and generated bridge config exposure.",
+        "ownership": "security-browser-first-bridge-extension",
+        "owns": "Browser-first bridge and extension research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A14-electron-ipc-boundary",
+        "purpose": "Map Electron renderer-to-main IPC, command parity with Tauri, contextIsolation and sandbox posture, local Electron servers, and per-command authorization gaps.",
+        "ownership": "security-electron-ipc-boundary",
+        "owns": "Electron IPC boundary research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A15-local-listener-topology",
+        "purpose": "Map local HTTP/WebSocket listeners, loopback assumptions, host override variables, no-TLS posture, rate-limit gaps, and memory-service exposure risk.",
+        "ownership": "security-local-listener-topology",
+        "owns": "Local listener topology research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A16-native-loading-terminal-execution",
+        "purpose": "Map terminal shell execution, PTY blast radius, PATH-dependent command resolution, prompt-in-argv leakage, native library loading, and environment-variable code-loading paths.",
+        "ownership": "security-native-loading-terminal",
+        "owns": "Native loading and terminal execution research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      },
+      {
+        "role_id": "A17-disclosure-release-trust",
+        "purpose": "Map vulnerability disclosure process, missing SECURITY.md, unsigned artifacts, code-signing and notarization posture, provenance, SBOM, and release trust gaps.",
+        "ownership": "security-disclosure-release-trust",
+        "owns": "Disclosure and release trust research receipt",
+        "applies_to_steps": [
+          "surface-specialist-fanout"
+        ]
+      }
+    ],
+    "receipt_requirements": [
+      "surface_id",
+      "repository_evidence_paths",
+      "tool_candidates",
+      "safe_tests",
+      "approval_required_tests",
+      "maturity_criteria",
+      "pipeline_promotion_candidate"
+    ]
+  },
+  "technique_overlays": [
+    {
+      "overlay_id": "safe-before-active",
+      "trigger": "Any step proposes active red-team testing.",
+      "techniques": [
+        {
+          "id": "authorization_sensitive_red_team",
+          "source": "local-extension",
+          "validation_note": "Active attack simulation requires human approval and scoped evidence."
+        }
+      ],
+      "applies_to_steps": [
+        "authorized-red-team-simulation"
+      ],
+      "validation_expectation": "The dispatch must block active simulation without human_answer input and explicit authorization gate."
+    },
+    {
+      "overlay_id": "pipeline-promotion",
+      "trigger": "Research proposes a CI check or blocking policy.",
+      "techniques": [
+        "memory_promotion_split",
+        "execution_receipt_handoff"
+      ],
+      "applies_to_steps": [
+        "pipeline-promotion-handoff"
+      ],
+      "validation_expectation": "Blocking policy promotion requires deterministic validation evidence and owner review."
+    }
+  ],
+  "observability": {
+    "dispatch_id_required": true,
+    "trace_events": [
+      "security_agent_research_started",
+      "surface_graph_created",
+      "agentic_attack_intelligence_created",
+      "surface_specialist_fanout_completed",
+      "installed_skill_validation_completed",
+      "malicious_skill_agent_audit_completed",
+      "safe_tests_generated",
+      "maturity_matrix_created",
+      "pipeline_handoff_prepared"
+    ],
+    "signal_grouping": "dispatch_id"
+  },
+  "promotion_guardrails": [
+    "Execution evidence is not canonical skill, inventory, glossary, sigil, or spell promotion.",
+    "Research notes cannot promote pipeline checks to block without task-session validation and owner review.",
+    "Active red-team simulation requires explicit operator approval."
+  ]
+}
